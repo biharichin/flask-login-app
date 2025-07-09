@@ -55,7 +55,7 @@ def login():
         conn.close()
 
         if user:
-            return f"welcome{user[1]}!Login successful!"
+            return render_template("dashboard.html", email=email)
         else:
             return "Invalid email or password"
     return render_template("login.html")
