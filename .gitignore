@@ -1,0 +1,16 @@
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore virtual environment
+venv/
+env/
+
+# Ignore SQLite database if local
+*.db
+
+# Ignore config or secret files (if you have them)
+config.py
+.env
+# Ignore log files
+*.log
