@@ -133,11 +133,25 @@ def search_all():
     c.execute("SELECT name, city, type FROM hospitals WHERE name LIKE ? OR city LIKE ?", 
               ('%' + query + '%', '%' + query + '%'))
     hospital_results = c.fetchall()
+    # Search pathology labs
+# Search pathology labs
+    c.execute("SELECT name, city, type FROM pathology_labs WHERE name LIKE ? OR city LIKE ?", 
+          ('%' + query + '%', '%' + query + '%'))
+    pathology_results = c.fetchall()
 
     conn.close()
 
-    return render_template("search.html", doctor_results=doctor_results, hospital_results=hospital_results)
-
+    return render_template("search.html", doctor_results=doctor_results, hospital_results=hospital_results, pathology_results=pathology_results)
+# 🏥 PATHOLOGY LABS PAGE
+@app.route("/pathology")
+def pathology_list():
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    c.execute("SELECT name, city, type FROM pathology_labs")
+    results = c.fetchall()
+    conn.close()
+    return render_template("pathology.html", results=results)
+# 🏥 PATHOLOGY LABS PAGE
 # Run the app
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

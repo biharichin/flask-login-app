@@ -39,6 +39,19 @@
                 {% endfor %}
             </ul>
         {% endif %}
+        {% if pathology_results %}
+             <h4>Pathology Labs:</h4>
+            <ul class="list-group mb-4">
+                {% for lab in pathology_results %}
+                    <li class="list-group-item">
+                        <strong>Name:</strong> {{ lab[0] }}<br>
+                        <strong>City:</strong> {{ lab[1] }}<br>
+                        <strong>Type:</strong> {{ lab[2] }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
     </div>
 </body>
 </html>
