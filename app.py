@@ -60,15 +60,23 @@ def login():
             return "Invalid email or password"
     return render_template("login.html")
 
-# 🧑‍💼 ADMIN PAGE
+# 🏢 ADMIN DASHBOARD
 @app.route("/admin")
 def admin():
     conn = sqlite3.connect("users.db")
     c = conn.cursor()
+
+    # Get signed up users
     c.execute("SELECT email, password, city FROM users")
     users = c.fetchall()
+
+    # Get doctors from doctor_plus_app
+    c.execute("SELECT name, age, gender, specialty FROM doctors")
+    doctors = c.fetchall()
+
     conn.close()
-    return render_template("admin.html", users=users)
+    return render_template("admin.html", users=users, doctors=doctors)
+
 
 # 🏠 HOME
 @app.route("/")
@@ -99,6 +107,7 @@ def doctor_search():
     conn.close()
 
     return render_template("doctor.html", results=results)
+
 # 🏥 DOCTOR TABLE CREATION
 #hospital search
 @app.route("/hospital")
