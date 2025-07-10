@@ -118,6 +118,26 @@ def hospital_list():
     return render_template("hospital.html", results=results)
 # 🏥 HOSPITAL TABLE CREATION
 # 🏥 HOSPITAL SEARCH PAGE
+@app.route("/search")
+def search_all():
+    query = request.args.get("query", "")
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+
+    # Search doctors
+    c.execute("SELECT name, age, gender, specialty FROM doctors WHERE name LIKE ? OR specialty LIKE ?", 
+              ('%' + query + '%', '%' + query + '%'))
+    doctor_results = c.fetchall()
+
+    # Search hospitals
+    c.execute("SELECT name, city, type FROM hospitals WHERE name LIKE ? OR city LIKE ?", 
+              ('%' + query + '%', '%' + query + '%'))
+    hospital_results = c.fetchall()
+
+    conn.close()
+
+    return render_template("search.html", doctor_results=doctor_results, hospital_results=hospital_results)
+
 # Run the app
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
