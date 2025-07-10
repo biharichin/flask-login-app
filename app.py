@@ -81,6 +81,35 @@ def home():
         <a href="/admin">Admin</a>
     </p>
     """
+#doctor search
+# 🏥 DOCTOR SEARCH PAGE
+@app.route("/doctor", methods=["GET"])
+def doctor_search():
+    query = request.args.get("query", "")
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+
+    if query:
+        c.execute("SELECT name, age, gender, specialty FROM doctors WHERE name LIKE ? OR specialty LIKE ?", 
+                  ('%' + query + '%', '%' + query + '%'))
+    else:
+        c.execute("SELECT name, age, gender, specialty FROM doctors")
+
+    results = c.fetchall()
+    conn.close()
+
+    return render_template("doctor.html", results=results)
+# 🏥 DOCTOR TABLE CREATION
+#hospital search
+@app.route("/hospital")
+def hospital_list():
+    conn = sqlite3.connect("users.db")
+    c = conn.cursor()
+    c.execute("SELECT name, city, type FROM hospitals")
+    results = c.fetchall()
+    conn.close()
+    return render_template("hospital.html", results=results)
+# 🏥 HOSPITAL SEARCH PAGE
 # Run the app
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
