@@ -103,12 +103,20 @@ def doctor_search():
 #hospital search
 @app.route("/hospital")
 def hospital_list():
+    query = request.args.get("query", "")
     conn = sqlite3.connect("users.db")
     c = conn.cursor()
-    c.execute("SELECT name, city, type FROM hospitals")
+
+    if query:
+        c.execute("SELECT name, city, type FROM hospitals WHERE name LIKE ? OR city LIKE ?", 
+                  ('%' + query + '%', '%' + query + '%'))
+    else:
+        c.execute("SELECT name, city, type FROM hospitals")
+
     results = c.fetchall()
     conn.close()
     return render_template("hospital.html", results=results)
+# 🏥 HOSPITAL TABLE CREATION
 # 🏥 HOSPITAL SEARCH PAGE
 # Run the app
 if __name__ == "__main__":

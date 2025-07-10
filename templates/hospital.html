@@ -13,6 +13,13 @@
     </nav>
 
     <div class="container mt-4">
+        <form method="GET" action="/hospital" class="mb-4">
+    <div class="input-group">
+        <input type="text" name="query" class="form-control" placeholder="Search hospital by name or city">
+        <button class="btn btn-primary" type="submit">Search</button>
+    </div>
+</form>
+
         {% if results %}
             <h4>Hospitals:</h4>
             <ul class="list-group">
