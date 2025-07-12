@@ -3,42 +3,38 @@
 <head>
     <title>Dashboard</title>
     <style>
-      /* Make navbar white and responsive */
-      .navbar {
-          background-color: white;
-          display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          padding: 10px;
-          box-shadow: 0 2px 5px lightgray;
-      }
+.navbar {
+  background-color: pink;
+  display: flex;
+  justify-content: flex-start;  /* ✅ Align left */
+  flex-wrap: wrap;
+  padding: 10px;
+}
 
-      .navbar a {
-          text-decoration: none;
-          color: black;
-          padding: 10px;
-          margin: 5px;
-          border-radius: 5px;
-          font-weight: bold;
-          background-color: #f0f0f0;
-      }
+.navbar a {
+  color: white;
+  padding: 12px;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 16px;
+}
 
-      .navbar a:hover {
-          background-color: #ddd;
-      }
+/* ✅ Mobile Fix */
+@media (max-width: 600px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;  /* ✅ Also left-align in mobile */
+  }
 
-      @media (max-width: 600px) {
-          .navbar {
-              flex-direction: column;
-              align-items: stretch;
-          }
+  .navbar a {
+    font-size: 18px;
+    padding: 14px;
+    text-align: left;
+    width: 100%;
+  }
+}
+</style>
 
-          .navbar a {
-              width: 100%;
-              text-align: center;
-          }
-      }
-    </style>
 </head>
 <body>
 
