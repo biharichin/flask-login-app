@@ -128,10 +128,18 @@ def dashboard():
 def admin():
     conn = get_connection()
     c = conn.cursor()
+
+    # Users
     c.execute("SELECT email, password, city FROM users")
     users = c.fetchall()
+
+    # Doctors
+    c.execute("SELECT name, age, gender, specialty FROM doctors")
+    doctors = c.fetchall()
+
     conn.close()
-    return render_template("admin.html", users=users)
+    return render_template("admin.html", users=users, doctors=doctors)
+
 
 @app.route("/doctor", methods=["GET"])
 def doctor_search():
