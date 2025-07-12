@@ -203,6 +203,17 @@ def fix_city_column():
         return "✅ City column added"
     except Exception as e:
         return f"❌ Error: {e}"
+#app.route("/viewusers")
+@app.route("/dbcheck")
+def db_check():
+    try:
+        conn = get_connection()
+        if conn.is_connected():
+            return "🟢 App is using MySQL!"
+        else:
+            return "🔴 Not connected to MySQL."
+    except Exception as e:
+        return f"❌ Error: {e}"
 
 # For Render.com hosting
 port = int(os.environ.get("PORT", 5000))
