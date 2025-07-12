@@ -192,6 +192,18 @@ def submit_doctor():
         return "Doctor added successfully!"
     return render_template("submit.html")
 
+@app.route("/fixcity")
+def fix_city_column():
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("ALTER TABLE users ADD COLUMN city VARCHAR(50)")
+        conn.commit()
+        conn.close()
+        return "✅ City column added"
+    except Exception as e:
+        return f"❌ Error: {e}"
+
 # For Render.com hosting
 port = int(os.environ.get("PORT", 5000))
 app.run(host='0.0.0.0', port=port)
