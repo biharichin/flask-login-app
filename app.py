@@ -74,6 +74,7 @@ def signup():
 
         conn = get_connection()
         c = conn.cursor()
+        print("🟢 Connected and inserting data")
         c.execute("INSERT INTO users (email, password, city) VALUES (%s, %s, %s)", (email, password, city))
         conn.commit()
         conn.close()
