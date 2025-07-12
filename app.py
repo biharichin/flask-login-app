@@ -20,7 +20,7 @@ def get_connection():
 def home():
     if "user" in session:
         return render_template("dashboard.html")
-    return "Welcome! Go to /signup, /login, or /admin"
+    return render_template("home.html")
 
 # ✅ Signup page
 @app.route("/signup", methods=["GET", "POST"])
