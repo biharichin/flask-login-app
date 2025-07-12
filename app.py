@@ -21,7 +21,7 @@ def init_db():
         c = conn.cursor(buffered=True)
         c.execute("""
             CREATE TABLE users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
                 email TEXT NOT NULL,
                 password TEXT NOT NULL
             )
