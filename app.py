@@ -2,14 +2,23 @@
 from flask import Flask, render_template, request, redirect
 import sqlite3
 import os
+import mysql.connector
 
 app = Flask(__name__)
-
+def get_connection():
+    return mysql.connector.connect(
+        host="sql12.freesqldatabase.com",
+        user="sql12789576",
+        password="svgwzPG2NJ",
+        database="sql12789576",
+        port=3306
+    )
+# Initialize MySQL connection
 # ✅ STEP 1: Create users.db file + users table if not exists
 def init_db():
     if not os.path.exists("users.db"):
-        conn = sqlite3.connect("users.db")
-        c = conn.cursor()
+        conn = get_connection()
+        c = conn.cursor(buffered=True)
         c.execute("""
             CREATE TABLE users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,8 +39,8 @@ def signup():
         password = request.form["password"]
         city = request.form["city"]
 
-        conn = sqlite3.connect("users.db")
-        c = conn.cursor()
+        conn = get_connection()
+        c = conn.cursor(buffered=True)
         c.execute("INSERT INTO users (email, password, city) VALUES (?, ?, ?)", (email, password, city))
         conn.commit()
         conn.close()
@@ -48,8 +57,8 @@ def login():
         email = request.form["email"]
         password = request.form["password"]
 
-        conn = sqlite3.connect("users.db")
-        c = conn.cursor()
+        conn = get_connection()
+        c = conn.cursor(buffered=True)
         c.execute("SELECT * FROM users WHERE email=? AND password=?", (email, password))
         user = c.fetchone()
         conn.close()
@@ -63,8 +72,8 @@ def login():
 # 🏢 ADMIN DASHBOARD
 @app.route("/admin")
 def admin():
-    conn = sqlite3.connect("users.db")
-    c = conn.cursor()
+    conn = get_connection()
+    c = conn.cursor(buffered=True)
 
     # Get signed up users
     c.execute("SELECT email, password, city FROM users")
@@ -94,8 +103,8 @@ def home():
 @app.route("/doctor", methods=["GET"])
 def doctor_search():
     query = request.args.get("query", "")
-    conn = sqlite3.connect("users.db")
-    c = conn.cursor()
+    conn = get_connection()
+    c = conn.cursor(buffered=True)
 
     if query:
         c.execute("SELECT name, age, gender, specialty FROM doctors WHERE name LIKE ? OR specialty LIKE ?", 
@@ -113,8 +122,8 @@ def doctor_search():
 @app.route("/hospital")
 def hospital_list():
     query = request.args.get("query", "")
-    conn = sqlite3.connect("users.db")
-    c = conn.cursor()
+    conn = get_connection()
+    c = conn.cursor(buffered=True)
 
     if query:
         c.execute("SELECT name, city, type FROM hospitals WHERE name LIKE ? OR city LIKE ?", 
@@ -130,8 +139,8 @@ def hospital_list():
 @app.route("/search")
 def search_all():
     query = request.args.get("query", "")
-    conn = sqlite3.connect("users.db")
-    c = conn.cursor()
+    conn = get_connection()
+    c = conn.cursor(buffered=True)
 
     # Search doctors
     c.execute("SELECT name, age, gender, specialty FROM doctors WHERE name LIKE ? OR specialty LIKE ?", 
@@ -154,13 +163,25 @@ def search_all():
 # 🏥 PATHOLOGY LABS PAGE
 @app.route("/pathology")
 def pathology_list():
-    conn = sqlite3.connect("users.db")
-    c = conn.cursor()
+    conn = get_connection()
+    c = conn.cursor(buffered=True)
     c.execute("SELECT name, city, type FROM pathology_labs")
     results = c.fetchall()
     conn.close()
     return render_template("pathology.html", results=results)
 # 🏥 PATHOLOGY LABS PAGE
+@app.route("/testdb")
+def testdb():
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("SELECT DATABASE();")
+        db = c.fetchone()
+        conn.close()
+        return f"✅ Connected to database: {db[0]}"
+    except Exception as e:
+        return f"❌ Error connecting to database: {e}"
+
 # Run the app
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
