@@ -22,6 +22,56 @@ def home():
         return render_template("dashboard.html")
     return render_template("home.html")
 
+@app.route("/createtables")
+def create_tables():
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+
+        # Create users table
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                email VARCHAR(100),
+                password VARCHAR(100),
+                city VARCHAR(50)
+            )
+        """)
+
+        # Create doctors table
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS doctors (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100),
+                age INT,
+                gender VARCHAR(10),
+                specialty VARCHAR(100)
+            )
+        """)
+
+        # Create hospitals table
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS hospitals (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100),
+                city VARCHAR(100)
+            )
+        """)
+
+        # Create pathology_labs table
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS pathology_labs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100),
+                city VARCHAR(100)
+            )
+        """)
+
+        conn.commit()
+        conn.close()
+        return "✅ Tables created successfully!"
+    except Exception as e:
+        return f"❌ Error creating tables: {e}"
+
 # ✅ Signup page
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
