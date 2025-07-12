@@ -52,6 +52,9 @@ def signup():
 # ✅ Create Tables route (keep this too!)
 @app.route("/createtables")
 def create_tables():
+    # Only allow if a special query is provided like /createtables?run=yes
+    if request.args.get("run") != "yes":
+        return "❌ Not allowed to create tables. Add ?run=yes in the URL if you want to create."
     try:
         conn = get_connection()
         c = conn.cursor()
