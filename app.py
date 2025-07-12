@@ -41,7 +41,7 @@ def signup():
 
         conn = get_connection()
         c = conn.cursor(buffered=True)
-        c.execute("INSERT INTO users (email, password, city) VALUES (?, ?, ?)", (email, password, city))
+        c.execute("INSERT INTO users (email, password, city) VALUES (%s, %s, %s)", (email, password, city))
         conn.commit()
         conn.close()
 
@@ -49,6 +49,38 @@ def signup():
             <h3>Signup successful!</h3>
             <p>Go to <a href="/login">Login</a></p> '''
     return render_template("signup.html")
+# ✅ Create Tables route (keep this too!)
+@app.route("/createtables")
+def create_tables():
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+
+        # Create users table
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                email VARCHAR(100),
+                password VARCHAR(100),
+                city VARCHAR(50)
+            )
+        """)
+
+        # Create doctors table
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS doctors (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100),
+                age INT,
+                gender VARCHAR(10),
+                specialty VARCHAR(100)
+            )
+        """)
+
+        conn.commit()
+        conn.close()
+        return "✅ Tables created successfully!"
+    except Exception as e:
+        return f"❌ Error creating tables: {e}"
 
 # 🔐 LOGIN
 @app.route("/login", methods=["GET", "POST"])
