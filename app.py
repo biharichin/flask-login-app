@@ -51,7 +51,8 @@ def create_tables():
                 name VARCHAR(100),
                 age INT,
                 gender VARCHAR(10),
-                specialty VARCHAR(100)
+                specialty VARCHAR(100),
+                city VARCHAR(100)
             )
         """)
 
@@ -92,6 +93,7 @@ def signup():
         conn.close()
         return "Signup successful! Go to /login"
     return render_template("signup.html")
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -134,7 +136,7 @@ def admin():
     users = c.fetchall()
 
     # Doctors
-    c.execute("SELECT name, age, gender, specialty FROM doctors")
+    c.execute("SELECT name, age, gender, specialty, city FROM doctors")
     doctors = c.fetchall()
 
     conn.close()
@@ -147,10 +149,10 @@ def doctor_search():
     conn = get_connection()
     c = conn.cursor()
     if query:
-        c.execute("SELECT name, age, gender, specialty FROM doctors WHERE name LIKE %s OR specialty LIKE %s", 
+        c.execute("SELECT name, age, gender, specialty, city FROM doctors WHERE name LIKE %s OR specialty LIKE %s", 
                   ('%' + query + '%', '%' + query + '%'))
     else:
-        c.execute("SELECT name, age, gender, specialty FROM doctors")
+        c.execute("SELECT name, age, gender, specialty, city FROM doctors")
     results = c.fetchall()
     conn.close()
     return render_template("doctor.html", results=results)
