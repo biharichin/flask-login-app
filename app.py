@@ -4,6 +4,18 @@ import os
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"
+@app.route("/addcitycolumn")
+def add_city_column():
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("ALTER TABLE users ADD COLUMN city VARCHAR(50)")
+        conn.commit()
+        conn.close()
+        return "✅ 'city' column added to users table"
+    except Exception as e:
+        return f"❌ Error: {e}"
+
 
 # MySQL connection
 def get_connection():
