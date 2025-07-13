@@ -20,13 +20,14 @@
 
     <h1>🩺 Registered Doctors (From Doctor Plus App)</h1>
     <table border="1" cellpadding="10">
-        <tr><th>Name</th><th>Age</th><th>Gender</th><th>Specialty</th></tr>
+        <tr><th>Name</th><th>Age</th><th>Gender</th><th>Specialty</th><th>city</th></tr>
         {% for doctor in doctors %}
         <tr>
             <td>{{ doctor[0] }}</td>
             <td>{{ doctor[1] }}</td>
             <td>{{ doctor[2] }}</td>
             <td>{{ doctor[3] }}</td>
+            <td>{{ doctor[4] }}</td>
         </tr>
         {% endfor %}
     </table>
