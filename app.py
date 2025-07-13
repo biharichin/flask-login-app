@@ -79,6 +79,18 @@ def create_tables():
     except Exception as e:
         return f"❌ Error creating tables: {e}"
 
+@app.route("/addphotocolumn")
+def add_photo_column():
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("ALTER TABLE doctors ADD COLUMN photo VARCHAR(255)")
+        conn.commit()
+        conn.close()
+        return "✅ 'photo' column added to doctors table"
+    except Exception as e:
+        return f"❌ Error: {e}"
+
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
@@ -212,6 +224,8 @@ def submit_doctor():
         age = request.form["age"]
         gender = request.form["gender"]
         specialty = request.form["specialty"]
+        city = request.form.get("city", "")  # Add city field
+        photo = request.form.get("photo", "")  # Add photo field
 
         conn = get_connection()
         c = conn.cursor()
