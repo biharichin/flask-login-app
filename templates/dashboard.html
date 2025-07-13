@@ -3,6 +3,44 @@
 <head>
     <title>Dashboard</title>
     <style>
+.row-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.card {
+  flex: 1 1 calc(20% - 20px); /* 5 cards per row */
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  text-align: center;
+  font-family: sans-serif;
+  min-width: 180px;
+}
+
+.card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Responsive for tablets and phones */
+@media (max-width: 768px) {
+  .card {
+    flex: 1 1 calc(50% - 20px); /* 2 cards per row on tablets */
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    flex: 1 1 100%; /* 1 card per row on mobile */
+  }
+}
+/*good looking*/
 .navbar {
   background-color: pink;
   display: flex;
@@ -136,5 +174,47 @@
     </form>
   </div>
 </div>
+<!--navbar-->
+<div style="padding: 20px;">
+  <h2 style="font-family: sans-serif;">👨‍⚕️ Top Doctors</h2>
+
+  <div class="row-container">
+    <!-- Doctor Card 1 -->
+    <div class="card">
+      <img src="/static/photos/doctor1.jpg" alt="Doctor 1">
+      <h3>Dr. A. Kumar</h3>
+      <p>Cardiologist – Delhi</p>
+    </div>
+
+    <!-- Doctor Card 2 -->
+    <div class="card">
+      <img src="/static/photos/doctor2.jpg" alt="Doctor 2">
+      <h3>Dr. B. Shah</h3>
+      <p>Neurologist – Mumbai</p>
+    </div>
+
+    <!-- Doctor Card 3 -->
+    <div class="card">
+      <img src="/static/photos/doctor3.jpg" alt="Doctor 3">
+      <h3>Dr. C. Mehta</h3>
+      <p>Dermatologist – Bangalore</p>
+    </div>
+
+    <!-- Doctor Card 4 -->
+    <div class="card">
+      <img src="/static/photos/doctor4.jpg" alt="Doctor 4">
+      <h3>Dr. D. Singh</h3>
+      <p>Orthopedic – Chennai</p>
+    </div>
+
+    <!-- Doctor Card 5 -->
+    <div class="card">
+      <img src="/static/photos/doctor5.jpg" alt="Doctor 5">
+      <h3>Dr. E. Gupta</h3>
+      <p>ENT – Hyderabad</p>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
