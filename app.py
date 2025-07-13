@@ -29,7 +29,8 @@ def get_connection():
 
 @app.route("/")
 def home():
-    return render_template("dashboard.html")
+    # Redirect the root URL to the main dashboard for consistency
+    return redirect("/dashboard")
 
 @app.route("/createtables")
 def create_tables():
@@ -121,8 +122,10 @@ def logout():
 
 @app.route("/dashboard")
 def dashboard():
-    return render_template("dashboard.html")
-    
+    # Check if user is logged in to provide a personalized experience
+    email = session.get("email")  # Use .get() to safely access the email
+    return render_template("dashboard.html", email=email)
+
 @app.route("/admin")
 def admin():
     if "email" not in session:
@@ -237,5 +240,3 @@ def db_check():
 # For Render.com hosting
 port = int(os.environ.get("PORT", 5000))
 app.run(host='0.0.0.0', port=port)
-
-

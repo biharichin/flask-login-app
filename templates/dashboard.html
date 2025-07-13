@@ -50,7 +50,11 @@
   </form>
 </div>
 
-<h2>Welcome to Dashboard</h2>
+{% if email %}
+  <h2>Welcome to your Dashboard, {{ email }}!</h2>
+{% else %}
+  <h2>Welcome to My Health App</h2>
+{% endif %}
 
 </body>
 </html>
