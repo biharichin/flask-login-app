@@ -124,7 +124,15 @@ def logout():
 def dashboard():
     # Check if user is logged in to provide a personalized experience
     email = session.get("email")  # Use .get() to safely access the email
-    return render_template("dashboard.html", email=email)
+    
+    # Get 5 doctors from database for the dashboard
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("SELECT name, specialty, city FROM doctors LIMIT 5")
+    doctors = c.fetchall()
+    conn.close()
+    
+    return render_template("dashboard.html", email=email, doctors=doctors)
 
 @app.route("/admin")
 def admin():
