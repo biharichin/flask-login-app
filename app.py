@@ -29,7 +29,7 @@ def get_connection():
 
 @app.route("/")
 def home():
-    return render_template("home.html")
+    return render_template("dashboard.html")
 
 @app.route("/createtables")
 def create_tables():
@@ -121,13 +121,12 @@ def logout():
 
 @app.route("/dashboard")
 def dashboard():
-    if "email" in session:
-        return render_template("dashboard.html", email=session["email"])
-    else:
-        return redirect("/login")
-
+    return render_template("dashboard.html")
+    
 @app.route("/admin")
 def admin():
+    if "email" not in session:
+        return redirect("/login")
     conn = get_connection()
     c = conn.cursor()
 
@@ -142,23 +141,31 @@ def admin():
     conn.close()
     return render_template("admin.html", users=users, doctors=doctors)
 
-
 @app.route("/doctor", methods=["GET"])
 def doctor_search():
-    query = request.args.get("query", "")
+    if "email" not in session:
+        return redirect("/login")
+
+    city = request.args.get("city", "")
+    disease = request.args.get("disease", "")
     conn = get_connection()
     c = conn.cursor()
-    if query:
-        c.execute("SELECT name, age, gender, specialty, city FROM doctors WHERE name LIKE %s OR specialty LIKE %s", 
-                  ('%' + query + '%', '%' + query + '%'))
+    if city and disease:
+        c.execute(
+            "SELECT name, age, gender, specialty, city FROM doctors WHERE city LIKE %s AND specialty LIKE %s",
+            ('%' + city + '%', '%' + disease + '%')
+        )
     else:
         c.execute("SELECT name, age, gender, specialty, city FROM doctors")
     results = c.fetchall()
     conn.close()
     return render_template("doctor.html", results=results)
 
+
 @app.route("/hospital", methods=["GET"])
 def hospital_page():
+    if "email" not in session:
+        return redirect("/login")
     query = request.args.get("query", "")
     conn = get_connection()
     c = conn.cursor()
@@ -173,6 +180,8 @@ def hospital_page():
 
 @app.route("/pathology", methods=["GET"])
 def pathology_page():
+    if "email" not in session:
+        return redirect("/login")
     query = request.args.get("query", "")
     conn = get_connection()
     c = conn.cursor()
@@ -228,3 +237,5 @@ def db_check():
 # For Render.com hosting
 port = int(os.environ.get("PORT", 5000))
 app.run(host='0.0.0.0', port=port)
+
+

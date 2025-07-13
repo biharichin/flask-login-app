@@ -42,6 +42,12 @@
   <a href="/doctor">Doctor</a>
   <a href="/hospital">Hospital</a>
   <a href="/pathology">Pathology Lab</a>
+  <!-- Add search form here -->
+  <form action="/doctor" method="get" style="display: flex; align-items: center; margin-left: auto;">
+    <input type="text" name="city" placeholder="City" required style="margin-right: 8px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+    <input type="text" name="disease" placeholder="Disease/Specialty" required style="margin-right: 8px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+    <button type="submit" style="padding: 6px 12px; border-radius: 4px; border: none; background: #fff; color: #e75480; font-weight: bold; cursor: pointer;">Search</button>
+  </form>
 </div>
 
 <h2>Welcome to Dashboard</h2>
