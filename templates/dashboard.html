@@ -19,6 +19,14 @@
   font-size: 16px;
 }
 
+/* Style for Login/Logout links */
+.navbar-auth-link {
+  color: white !important;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 0 10px;
+}
+
 /* ✅ Mobile Fix */
 @media (max-width: 600px) {
   .navbar {
@@ -42,12 +50,25 @@
   <a href="/doctor">Doctor</a>
   <a href="/hospital">Hospital</a>
   <a href="/pathology">Pathology Lab</a>
-  <!-- Add search form here -->
-  <form action="/doctor" method="get" style="display: flex; align-items: center; margin-left: auto;">
-    <input type="text" name="city" placeholder="City" required style="margin-right: 8px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
-    <input type="text" name="disease" placeholder="Disease/Specialty" required style="margin-right: 8px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
-    <button type="submit" style="padding: 6px 12px; border-radius: 4px; border: none; background: #fff; color: #e75480; font-weight: bold; cursor: pointer;">Search</button>
-  </form>
+
+  <!-- Container for right-aligned items -->
+  <div style="display: flex; align-items: center; margin-left: auto;">
+    <!-- User Status & Auth Links -->
+    {% if email %}
+      <span style="color: white; font-weight: bold; margin-right: 15px;">✅ Signed In</span>
+      <a href="/logout" class="navbar-auth-link">Logout</a>
+    {% else %}
+      <a href="/login" class="navbar-auth-link">Login</a>
+      <a href="/signup" class="navbar-auth-link">Sign Up</a>
+    {% endif %}
+
+    <!-- Search Form -->
+    <form action="/doctor" method="get" style="display: flex; align-items: center; margin-left: 20px;">
+      <input type="text" name="city" placeholder="City" required style="margin-right: 8px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+      <input type="text" name="disease" placeholder="Disease/Specialty" required style="margin-right: 8px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+      <button type="submit" style="padding: 6px 12px; border-radius: 4px; border: none; background: #fff; color: #e75480; font-weight: bold; cursor: pointer;">Search</button>
+    </form>
+  </div>
 </div>
 
 {% if email %}
