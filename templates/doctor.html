@@ -33,15 +33,17 @@
         <div class="row">
             {% for doctor in results %}
                 <div class="col-md-4 mb-3">
-                    <div class="card">
+                    <div class="card h-100">
+                        {% if doctor[5] %}
+                            <img src="{{ url_for('static', filename='photos/' + doctor[5]) }}" class="card-img-top" alt="Doctor Photo" style="height: 250px; object-fit: cover;">
+                        {% endif %}
                         <div class="card-body">
                             <h5 class="card-title">{{ doctor[0] }}</h5>
                             <p class="card-text">
                                 <strong>Age:</strong> {{ doctor[1] }}<br>
                                 <strong>Gender:</strong> {{ doctor[2] }}<br>
                                 <strong>Specialty:</strong> {{ doctor[3] }}<br>
-                                <strong>City:</strong> {{ doctor[4] }} 
-
+                                <strong>City:</strong> {{ doctor[4] }}
                             </p>
                         </div>
                     </div>

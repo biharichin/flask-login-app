@@ -155,11 +155,11 @@ def doctor_search():
     c = conn.cursor()
     if city and disease:
         c.execute(
-            "SELECT name, age, gender, specialty, city FROM doctors WHERE city LIKE %s AND specialty LIKE %s",
+            "SELECT name, age, gender, specialty, city, photo FROM doctors WHERE city LIKE %s AND specialty LIKE %s",
             ('%' + city + '%', '%' + disease + '%')
         )
     else:
-        c.execute("SELECT name, age, gender, specialty, city FROM doctors")
+        c.execute("SELECT name, age, gender, specialty, city, photo FROM doctors")
     results = c.fetchall()
     conn.close()
     return render_template("doctor.html", results=results)
