@@ -19,7 +19,7 @@ def add_city_column():
 
 # MySQL connection
 def get_connection():
-    return mysql.connector.connect(
+    return mysql.connector.connect( 
         host="sql12.freesqldatabase.com",
         user="sql12789576",
         password="svgwzPG2NJ",
