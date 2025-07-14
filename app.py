@@ -1,9 +1,11 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, flash
 import mysql.connector
 import os
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"
+ADMIN_EMAIL = "admin@yourapp.com" # <-- IMPORTANT: Change this to your actual admin email
+
 @app.route("/addcitycolumn")
 def add_city_column():
     try:
@@ -148,21 +150,34 @@ def dashboard():
 
 @app.route("/admin")
 def admin():
-    if "email" not in session:
-        return redirect("/login")
+    # Security check: Only allow the designated admin user
+    if "email" not in session or session.get("email") != ADMIN_EMAIL:
+        flash("You do not have permission to access this page.", "danger")
+        return redirect("/dashboard") # Redirect non-admins to the dashboard
     conn = get_connection()
-    c = conn.cursor()
+    c = conn.cursor(dictionary=True)
 
     # Users
-    c.execute("SELECT email, password, city FROM users")
+    c.execute("SELECT email, city FROM users")
     users = c.fetchall()
 
     # Doctors
-    c.execute("SELECT name, age, gender, specialty, city FROM doctors")
+    c.execute("SELECT name, age, gender, specialty, city, photo FROM doctors")
     doctors = c.fetchall()
 
+    # Hospitals with their account email
+    c.execute("""
+        SELECT
+            h.name, h.city, h.hospital_type, ha.email
+        FROM
+            hospitals h
+        LEFT JOIN
+            hospital_accounts ha ON h.account_id = ha.id
+    """)
+    hospitals = c.fetchall()
+
     conn.close()
-    return render_template("admin.html", users=users, doctors=doctors)
+    return render_template("admin.html", users=users, doctors=doctors, hospitals=hospitals)
 
 @app.route("/doctor", methods=["GET"])
 def doctor_search():
@@ -191,12 +206,12 @@ def hospital_page():
         return redirect("/login")
     query = request.args.get("query", "")
     conn = get_connection()
-    c = conn.cursor()
+    c = conn.cursor(dictionary=True) # Use a dictionary cursor for easier access
     if query:
-        c.execute("SELECT name, city FROM hospitals WHERE name LIKE %s OR city LIKE %s", 
+        c.execute("SELECT name, city, hospital_type, photo_url FROM hospitals WHERE name LIKE %s OR city LIKE %s", 
                   ('%' + query + '%', '%' + query + '%'))
     else:
-        c.execute("SELECT name, city FROM hospitals")
+        c.execute("SELECT name, city, hospital_type, photo_url FROM hospitals")
     results = c.fetchall()
     conn.close()
     return render_template("hospital.html", results=results)

@@ -1,35 +1,92 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Admin Page</title>
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
-    <h1>🧑‍💼 Signed Up Users</h1>
-    <table border="1" cellpadding="10">
-        <tr><th>Email</th><th>Password</th><th>City</th></tr>
-        {% for user in users %}
-        <tr>
-            <td>{{ user[0] }}</td>
-            <td>{{ user[1] }}</td>
-            <td>{{ user[2] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Admin Panel</h1>
+            <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
 
-    <hr><br>
+        <!-- Registered Hospitals Section -->
+        <h2 class="mt-5">🏥 Registered Hospitals</h2>
+        <p>List of hospitals that have created an account and submitted details.</p>
+        <table class="table table-striped table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Hospital Name</th>
+                    <th>City</th>
+                    <th>Type</th>
+                    <th>Registered Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hospital in hospitals %}
+                <tr>
+                    <td>{{ hospital.name or 'Details not submitted' }}</td>
+                    <td>{{ hospital.city or 'N/A' }}</td>
+                    <td>{{ hospital.hospital_type or 'N/A' }}</td>
+                    <td>{{ hospital.email or 'Account not linked' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
-    <h1>🩺 Registered Doctors (From Doctor Plus App)</h1>
-    <table border="1" cellpadding="10">
-        <tr><th>Name</th><th>Age</th><th>Gender</th><th>Specialty</th><th>city</th></tr>
-        {% for doctor in doctors %}
-        <tr>
-            <td>{{ doctor[0] }}</td>
-            <td>{{ doctor[1] }}</td>
-            <td>{{ doctor[2] }}</td>
-            <td>{{ doctor[3] }}</td>
-            <td>{{ doctor[4] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+        <!-- Registered Users Section -->
+        <h2 class="mt-5">🧑‍💼 Signed Up Users</h2>
+        <table class="table table-striped table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Email</th>
+                    <th>City</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.city }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Doctors List Section -->
+        <h2 class="mt-5">🩺 Registered Doctors</h2>
+        <table class="table table-striped table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Photo</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Specialty</th>
+                    <th>City</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doctor in doctors %}
+                <tr>
+                    <td>
+                        {% if doctor.photo %}
+                            <img src="{{ url_for('static', filename='uploads/' + doctor.photo) }}" alt="{{ doctor.name }}" width="75" class="img-thumbnail">
+                        {% else %}
+                            <img src="https://via.placeholder.com/75.png?text=No+Pic" alt="No photo" class="img-thumbnail">
+                        {% endif %}
+                    </td>
+                    <td>{{ doctor.name }}</td>
+                    <td>{{ doctor.age }}</td>
+                    <td>{{ doctor.gender }}</td>
+                    <td>{{ doctor.specialty }}</td>
+                    <td>{{ doctor.city }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>
