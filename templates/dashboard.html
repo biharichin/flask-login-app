@@ -251,6 +251,52 @@
   text-align: center;
   color: #6c757d;
 }
+
+/* Footer Styling */
+.site-footer {
+  background-color: #007bff; /* Blue background */
+  color: white;
+  padding: 30px 20px;
+  margin-top: 40px;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.footer-contact h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.2em;
+  text-transform: uppercase;
+}
+
+.contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+}
+
+.contact-links a, .contact-links span {
+  color: white;
+  text-decoration: none;
+}
+
+.contact-links a:hover {
+  text-decoration: underline;
+}
+
+.footer-info {
+  text-align: right;
+  margin-left: auto; /* Push to the right */
+}
 </style>
 </head>
 <body>
@@ -292,39 +338,93 @@
         <div class="row-container">
           {% if doctors %}
             {% for doctor in doctors %}
-              <div class="card" onclick="window.location.href='/doctor'">
-                {% if doctor[3] and doctor[3] != '' %}
-                  <img src="{{ doctor[3] }}" alt="{{ doctor[0] }}" class="doctor-photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+              <div class="card" onclick="window.location.href='/doctor_detail/{{ doctor.id }}'">
+                {% if doctor.photo %}
+                  <img src="{{ doctor.photo }}" alt="{{ doctor.name }}" class="doctor-photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                   <div class="doctor-photo-placeholder" style="display: none;">👨‍⚕️</div>
                 {% else %}
                   <div class="doctor-photo-placeholder">👨‍⚕️</div>
                 {% endif %}
-                <h3>{{ doctor[0] }}</h3>
-                <p class="specialty">{{ doctor[1] }}</p>
-                <p class="city">📍 {{ doctor[2] }}</p>
+                <h3>{{ doctor.name }}</h3>
+                <p class="specialty">{{ doctor.specialty }}</p>
+                <p class="city">📍 {{ doctor.city }}</p>
               </div>
             {% endfor %}
           {% else %}
-            <p>No doctors available right now.</p>
+            <p style="padding: 20px;">No doctors available right now.</p>
           {% endif %}
         </div>
       </div>
     </div>
   </div>
 
-  <!-- SECTION 2: HOSPITALS (Placeholder for now) -->
-  <div class="placeholder-section">
+  <!-- SECTION 2: HOSPITALS -->
+  <div class="section">
     <h2>🏥 Top Hospitals</h2>
-    <p>Hospital cards will be added here soon!</p>
+    <div class="scroll-container">
+      <button class="arrow-btn arrow-left" onclick="scrollLeft('hospitalContainer')">←</button>
+      <button class="arrow-btn arrow-right" onclick="scrollRight('hospitalContainer')">→</button>
+      <div class="scroll-wrapper" id="hospitalContainer">
+        <div class="row-container">
+          {% for hospital in hospitals %}
+            <div class="card" onclick="window.location.href='/hospital_detail/{{ hospital.id }}'">
+              <div class="doctor-photo-placeholder">🏥</div>
+              <h3>{{ hospital.name }}</h3>
+              <p class="city">📍 {{ hospital.city }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- SECTION 3: PATHOLOGY LABS (Placeholder for now) -->
-  <div class="placeholder-section">
+  <!-- SECTION 3: PATHOLOGY LABS -->
+  <div class="section">
     <h2>🔬 Top Pathology Labs</h2>
-    <p>Pathology lab cards will be added here soon!</p>
+    <div class="scroll-container">
+      <button class="arrow-btn arrow-left" onclick="scrollLeft('labContainer')">←</button>
+      <button class="arrow-btn arrow-right" onclick="scrollRight('labContainer')">→</button>
+      <div class="scroll-wrapper" id="labContainer">
+        <div class="row-container">
+          {% for lab in pathology_labs %}
+            <div class="card" onclick="window.location.href='/pathology_detail/{{ lab.id }}'">
+              <div class="doctor-photo-placeholder">🔬</div>
+              <h3>{{ lab.name }}</h3>
+              <p class="city">📍 {{ lab.city }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
   </div>
 
+  <!-- SECTION 4: DAILY INFORMATION (Placeholder) -->
+  <div class="placeholder-section">
+    <h2>📅 Daily Information</h2>
+    <p>Health tips and news will be displayed here soon!</p>
+  </div>
 </div>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <div class="footer-container">
+    <div class="footer-contact">
+      <h4>Contact</h4>
+      <div class="contact-links">
+        <a href="#" target="_blank">Facebook</a>
+        <a href="#" target="_blank">YouTube</a>
+        <span>Call: 7856934555</span>
+        <a href="mailto:chinmayee@gmail.com">e-mail-chinmayee@gmail.com</a>
+      </div>
+    </div>
+    <div class="footer-info">
+      <p>&copy; 2024 Your Health App. All Rights Reserved.</p>
+      <p>
+        <a href="#">About Us</a> | <a href="#">Privacy Policy</a>
+      </p>
+    </div>
+  </div>
+</footer>
 
 <script>
 // JavaScript for scrolling arrows
@@ -392,6 +492,19 @@ document.addEventListener('DOMContentLoaded', function() {
     if (leftArrow) leftArrow.style.display = 'block';
     if (rightArrow) rightArrow.style.display = 'block';
   }
+
+  const hospitalContainer = document.getElementById('hospitalContainer');
+  if (hospitalContainer) {
+    hospitalContainer.addEventListener('scroll', () => updateArrows('hospitalContainer'));
+    updateArrows('hospitalContainer');
+  }
+
+  const labContainer = document.getElementById('labContainer');
+  if (labContainer) {
+    labContainer.addEventListener('scroll', () => updateArrows('labContainer'));
+    updateArrows('labContainer');
+  }
+
 });
 </script>
 

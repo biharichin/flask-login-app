@@ -63,7 +63,9 @@ def create_tables():
             CREATE TABLE IF NOT EXISTS hospitals (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(100),
-                city VARCHAR(100)
+                city VARCHAR(100),
+                hospital_type VARCHAR(100),
+                photo_url VARCHAR(255)
             )
         """)
 
@@ -71,7 +73,26 @@ def create_tables():
             CREATE TABLE IF NOT EXISTS pathology_labs (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(100),
-                city VARCHAR(100)
+                city VARCHAR(100),
+                lab_type VARCHAR(100),
+                photo_url VARCHAR(255),
+                account_id INT
+            )
+        """)
+
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS hospital_accounts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(100) UNIQUE,
+                password VARCHAR(255)
+            )
+        """)
+
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS pathology_accounts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(100) UNIQUE,
+                password VARCHAR(255)
             )
         """)
 
@@ -138,15 +159,35 @@ def logout():
 def dashboard():
     # Check if user is logged in to provide a personalized experience
     email = session.get("email")  # Use .get() to safely access the email
-    
-    # Get 5 doctors from database for the dashboard
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute("SELECT name, specialty, city FROM doctors LIMIT 5")
-    doctors = c.fetchall()
-    conn.close()
-    
-    return render_template("dashboard.html", email=email, doctors=doctors)
+    doctors = []
+    hospitals = []
+    pathology_labs = []
+    conn = None
+    try:
+        conn = get_connection()
+        # Use a dictionary cursor for easier access in the template (e.g., doctor.name)
+        c = conn.cursor(dictionary=True)
+
+        # Get 5 doctors for the dashboard
+        c.execute("SELECT id, name, specialty, city, photo FROM doctors LIMIT 5")
+        doctors = c.fetchall()
+
+        # Get 5 hospitals for the dashboard
+        c.execute("SELECT id, name, city, photo_url FROM hospitals LIMIT 5")
+        hospitals = c.fetchall()
+
+        # Get 5 pathology labs for the dashboard
+        c.execute("SELECT id, name, city, photo_url FROM pathology_labs LIMIT 5")
+        pathology_labs = c.fetchall()
+
+    except Exception as e:
+        flash(f"Error loading dashboard data: {e}", "danger")
+        print(f"Dashboard Error: {e}") # Log error for debugging
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+
+    return render_template("dashboard.html", email=email, doctors=doctors, hospitals=hospitals, pathology_labs=pathology_labs)
 
 @app.route("/admin")
 def admin():
@@ -210,6 +251,25 @@ def doctor_search():
     conn.close()
     return render_template("doctor.html", results=results)
 
+@app.route("/doctor_detail/<int:doctor_id>")
+def doctor_detail(doctor_id):
+    if "email" not in session:
+        return redirect("/login")
+
+    doctor = None
+    conn = None
+    try:
+        conn = get_connection()
+        c = conn.cursor(dictionary=True)
+        # Fetch all details for the specific doctor
+        c.execute("SELECT name, age, gender, specialty, city, photo FROM doctors WHERE id = %s", (doctor_id,))
+        doctor = c.fetchone()
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+
+    return render_template("doctor_detail.html", doctor=doctor)
+
 
 @app.route("/hospital", methods=["GET"])
 def hospital_page():
@@ -226,6 +286,41 @@ def hospital_page():
     results = c.fetchall()
     conn.close()
     return render_template("hospital.html", results=results)
+
+@app.route("/hospital_detail/<int:hospital_id>")
+def hospital_detail(hospital_id):
+    if "email" not in session:
+        return redirect("/login")
+    
+    hospital = None
+    conn = None
+    try:
+        conn = get_connection()
+        c = conn.cursor(dictionary=True)
+        c.execute("SELECT name, city, hospital_type, photo_url FROM hospitals WHERE id = %s", (hospital_id,))
+        hospital = c.fetchone()
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+    return render_template("hospital_detail.html", hospital=hospital)
+
+@app.route("/pathology_detail/<int:lab_id>")
+def pathology_detail(lab_id):
+    if "email" not in session:
+        return redirect("/login")
+
+    lab = None
+    conn = None
+    try:
+        conn = get_connection()
+        c = conn.cursor(dictionary=True)
+        c.execute("SELECT name, city, lab_type, photo_url FROM pathology_labs WHERE id = %s", (lab_id,))
+        lab = c.fetchone()
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+
+    return render_template("pathology_detail.html", lab=lab)
 
 @app.route("/pathology", methods=["GET"])
 def pathology_page():
@@ -255,8 +350,8 @@ def submit_doctor():
 
         conn = get_connection()
         c = conn.cursor()
-        c.execute("INSERT INTO doctors (name, age, gender, specialty) VALUES (%s, %s, %s, %s)",
-                  (name, age, gender, specialty))
+        c.execute("INSERT INTO doctors (name, age, gender, specialty, city, photo) VALUES (%s, %s, %s, %s, %s, %s)",
+                  (name, age, gender, specialty, city, photo))
         conn.commit()
         conn.close()
         return "Doctor added successfully!"

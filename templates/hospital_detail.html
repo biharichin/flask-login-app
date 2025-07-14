@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ hospital.name if hospital else 'Hospital Not Found' }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f4f9; }
+        .navbar { background-color: pink; padding: 10px; text-align: center; }
+        .navbar a { color: white; padding: 14px 20px; text-decoration: none; font-weight: bold; }
+        .container { max-width: 800px; margin: 40px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .hospital-header { text-align: center; border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 20px; }
+        .hospital-header img { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid #007bff; }
+        .hospital-header h1 { color: #333; margin-top: 10px; }
+        .hospital-details p { font-size: 18px; color: #555; line-height: 1.6; }
+        .hospital-details strong { color: #007bff; }
+        .not-found { text-align: center; color: #d9534f; font-size: 24px; padding: 50px; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <a href="/dashboard">Back to Dashboard</a>
+    <a href="/doctor">Doctors</a>
+    <a href="/hospital">Hospitals</a>
+</div>
+
+<div class="container">
+    {% if hospital %}
+        <div class="hospital-header">
+            {% if hospital.photo_url %}
+                <img src="{{ hospital.photo_url }}" alt="{{ hospital.name }}">
+            {% else %}
+                <img src="{{ url_for('static', filename='images/default_hospital.png') }}" alt="Default Hospital Image">
+            {% endif %}
+            <h1>{{ hospital.name }}</h1>
+        </div>
+        <div class="hospital-details">
+            <p><strong>City:</strong> {{ hospital.city }}</p>
+            <p><strong>Type:</strong> {{ hospital.hospital_type or 'N/A' }}</p>
+            <!-- You can add more details here as you expand your database -->
+        </div>
+    {% else %}
+        <p class="not-found">Sorry, the hospital you are looking for could not be found.</p>
+    {% endif %}
+</div>
+
+</body>
+</html>
