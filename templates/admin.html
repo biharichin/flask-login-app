@@ -36,6 +36,30 @@
             </tbody>
         </table>
 
+        <!-- Registered Pathology Labs Section -->
+        <h2 class="mt-5">🔬 Registered Pathology Labs</h2>
+        <p>List of pathology labs that have created an account and submitted details.</p>
+        <table class="table table-striped table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Lab Name</th>
+                    <th>City</th>
+                    <th>Services</th>
+                    <th>Registered Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lab in pathology_labs %}
+                <tr>
+                    <td>{{ lab.name or 'Details not submitted' }}</td>
+                    <td>{{ lab.city or 'N/A' }}</td>
+                    <td>{{ lab.lab_type or 'N/A' }}</td>
+                    <td>{{ lab.email or 'Account not linked' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
         <!-- Registered Users Section -->
         <h2 class="mt-5">🧑‍💼 Signed Up Users</h2>
         <table class="table table-striped table-bordered">

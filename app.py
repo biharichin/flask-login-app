@@ -176,8 +176,19 @@ def admin():
     """)
     hospitals = c.fetchall()
 
+    # Pathology Labs with their account email
+    c.execute("""
+        SELECT
+            pl.name, pl.city, pl.lab_type, pa.email
+        FROM
+            pathology_labs pl
+        LEFT JOIN
+            pathology_accounts pa ON pl.account_id = pa.id
+    """)
+    pathology_labs = c.fetchall()
+
     conn.close()
-    return render_template("admin.html", users=users, doctors=doctors, hospitals=hospitals)
+    return render_template("admin.html", users=users, doctors=doctors, hospitals=hospitals, pathology_labs=pathology_labs)
 
 @app.route("/doctor", methods=["GET"])
 def doctor_search():
@@ -222,12 +233,12 @@ def pathology_page():
         return redirect("/login")
     query = request.args.get("query", "")
     conn = get_connection()
-    c = conn.cursor()
+    c = conn.cursor(dictionary=True)
     if query:
-        c.execute("SELECT name, city FROM pathology_labs WHERE name LIKE %s OR city LIKE %s", 
+        c.execute("SELECT name, city, lab_type, photo_url FROM pathology_labs WHERE name LIKE %s OR city LIKE %s", 
                   ('%' + query + '%', '%' + query + '%'))
     else:
-        c.execute("SELECT name, city FROM pathology_labs")
+        c.execute("SELECT name, city, lab_type, photo_url FROM pathology_labs")
     results = c.fetchall()
     conn.close()
     return render_template("pathology.html", results=results)
