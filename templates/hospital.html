@@ -27,31 +27,65 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
-        {% if results %}
-            <div class="row">
-                {% for hospital in results %}
-                <div class="col-md-4">
-                    <div class="card hospital-card">
-                        {% if hospital.photo_url %}
-                            <img src="{{ url_for('static', filename='uploads/' + hospital.photo_url) }}" class="card-img-top" alt="Photo of {{ hospital.name }}">
-                        {% else %}
-                            <img src="https://via.placeholder.com/400x200.png?text=No+Image+Available" class="card-img-top" alt="No image available">
-                        {% endif %}
-                        <div class="card-body">
-                            <h5 class="card-title">{{ hospital.name }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">{{ hospital.city }}</h6>
-                            <p class="card-text">
-                                <strong>Type:</strong> {{ hospital.hospital_type or 'N/A' }}
-                            </p>
-                        </div>
+    <div class="container mt-5">
+        <div class="card p-4 shadow-sm">
+            <h4 class="mb-3">🏥 Find a Hospital</h4>
+            <form method="GET" action="/hospital">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="city" class="form-label">City</label>
+                        <input type="text" name="city" id="city" class="form-control" placeholder="e.g., Delhi" value="{{ search_terms.city or '' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">Hospital Name</label>
+                        <input type="text" name="name" id="name" class="form-control" placeholder="e.g., Apollo" value="{{ search_terms.name or '' }}">
                     </div>
                 </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p>No hospitals found.</p>
-        {% endif %}
+                <button type="submit" class="btn btn-primary mt-3 w-100">Search</button>
+            </form>
+        </div>
+
+        <div class="container mt-4">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {# Display flashed messages if they exist #}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                {# Display results or informational messages #}
+                {% if results %}
+                    <div class="row">
+                        {% for hospital in results %}
+                            <div class="col-md-4 mb-4">
+                                <a href="/hospital_detail/{{ hospital.id }}" style="text-decoration: none; color: inherit;">
+                                    <div class="card h-100 shadow-sm" style="cursor: pointer;">
+                                        {% if hospital.photo_url %}
+                                            <img src="{{ url_for('static', filename='uploads/' + hospital.photo_url) }}" class="card-img-top" alt="Photo of {{ hospital.name }}" style="height: 250px; object-fit: cover;">
+                                        {% else %}
+                                            <img src="https://via.placeholder.com/400x250.png?text=No+Image" class="card-img-top" alt="No image available" style="height: 250px; object-fit: cover;">
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ hospital.name }}</h5>
+                                            <p class="card-text">
+                                                <strong>City:</strong> {{ hospital.city }}<br>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% elif (request.args.get('city') or request.args.get('name')) and not messages %}
+                    <div class="alert alert-warning" role="alert">No hospitals found matching your criteria. Try broadening your search.</div>
+                {% elif not (request.args.get('city') or request.args.get('name')) and not results %}
+                    <div class="alert alert-info" role="alert">No hospitals are available at the moment.</div>
+                {% endif %}
+            {% endwith %}
     </div>
 </body>
 </html>

@@ -7,9 +7,6 @@
     <style>
         .lab-card {
             margin-bottom: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            overflow: hidden;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             transition: transform 0.2s;
         }
@@ -17,28 +14,77 @@
             transform: translateY(-5px);
         }
         .lab-card img {
-            width: 100%;
             height: 200px;
             object-fit: cover;
         }
     </style>
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand">All Pathology Labs</span>
+        </div>
+    </nav>
+
     <div class="container mt-5">
-        <div class="row">
-            {% for lab in results %}
-            <div class="col-md-4">
-                <div class="card lab-card">
-                    <img src="{{ url_for('static', filename='uploads/' + lab.photo_url) if lab.photo_url else 'https://via.placeholder.com/400x200.png?text=No+Image' }}" class="card-img-top" alt="Photo of {{ lab.name }}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ lab.name }}</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">{{ lab.city }}</h6>
-                        <p class="card-text"><strong>Services:</strong> {{ lab.lab_type or 'N/A' }}</p>
+        <div class="card p-4 shadow-sm">
+            <h4 class="mb-3">🔬 Find a Pathology Lab</h4>
+            <form method="GET" action="/pathology">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="city" class="form-label">City</label>
+                        <input type="text" name="city" id="city" class="form-control" placeholder="e.g., Delhi" value="{{ search_terms.city or '' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">Lab Name</label>
+                        <input type="text" name="name" id="name" class="form-control" placeholder="e.g., Metropolis" value="{{ search_terms.name or '' }}">
                     </div>
                 </div>
-            </div>
-            {% endfor %}
+                <button type="submit" class="btn btn-primary mt-3 w-100">Search</button>
+            </form>
         </div>
+
+        <div class="container mt-4">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {# Display flashed messages if they exist #}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                {# Display results or informational messages #}
+                {% if results %}
+                    <div class="row">
+                        {% for lab in results %}
+                            <div class="col-md-4 mb-4">
+                                <a href="/pathology_detail/{{ lab.id }}" style="text-decoration: none; color: inherit;">
+                                    <div class="card h-100 shadow-sm" style="cursor: pointer;">
+                                        {% if lab.photo_url %}
+                                            <img src="{{ url_for('static', filename='uploads/' + lab.photo_url) }}" class="card-img-top" alt="Photo of {{ lab.name }}" style="height: 250px; object-fit: cover;">
+                                        {% else %}
+                                            <img src="https://via.placeholder.com/400x250.png?text=No+Image" class="card-img-top" alt="No image available" style="height: 250px; object-fit: cover;">
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ lab.name }}</h5>
+                                            <p class="card-text">
+                                                <strong>City:</strong> {{ lab.city }}<br>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% elif (request.args.get('city') or request.args.get('name')) and not messages %}
+                    <div class="alert alert-warning" role="alert">No labs found matching your criteria. Try broadening your search.</div>
+                {% elif not (request.args.get('city') or request.args.get('name')) and not results %}
+                    <div class="alert alert-info" role="alert">No labs are available at the moment.</div>
+                {% endif %}
+            {% endwith %}
     </div>
 </body>
 </html>

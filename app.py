@@ -2,10 +2,32 @@ from flask import Flask, render_template, request, redirect, session, flash
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+import logging
+from dotenv import load_dotenv
+import secrets
+secrets.token_hex(16)
+# Ensure the .env file is loaded to access environment variables
+# This is necessary to keep sensitive information like database credentials secure.
+
+# Load environment variables from .env file
+load_dotenv()
+
+# --- TEMPORARY DEBUGGING ---
+# This block will help you check if your .env file is being loaded correctly.
+# You can remove this code once you confirm everything is working.
+print("--- Checking Environment Variables ---")
+print(f"SECRET_KEY loaded: {'Yes' if os.environ.get('SECRET_KEY') else 'No, not found!'}")
+print(f"DB_HOST loaded: {os.environ.get('DB_HOST')}")
+print(f"ADMIN_EMAIL loaded: {os.environ.get('ADMIN_EMAIL')}")
+print("------------------------------------")
+
+# Configure basic logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
-app.secret_key = "your_secret_key_here"
-ADMIN_EMAIL = "admin@yourapp.com" # <-- IMPORTANT: Change this to your actual admin email
+# Load configuration from environment variables
+app.secret_key = os.environ.get("SECRET_KEY")
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
 
 @app.route("/addcitycolumn")
 def add_city_column():
@@ -17,16 +39,17 @@ def add_city_column():
         conn.close()
         return "✅ 'city' column added to users table"
     except Exception as e:
-        return f"❌ Error: {e}"
+        logging.error(f"Error adding city column: {e}")
+        return "❌ An error occurred. Check server logs."
 
 
 # MySQL connection
 def get_connection():
-    return mysql.connector.connect( 
-        host="sql12.freesqldatabase.com",
-        user="sql12789576",
-        password="svgwzPG2NJ",
-        database="sql12789576",
+    return mysql.connector.connect(
+        host=os.environ.get("DB_HOST"),
+        user=os.environ.get("DB_USER"),
+        password=os.environ.get("DB_PASSWORD"),
+        database=os.environ.get("DB_NAME"),
         port=3306
     )
 
@@ -44,7 +67,7 @@ def create_tables():
         c.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 email VARCHAR(100) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL,
+                password VARCHAR(100) NOT NULL,
                 city VARCHAR(50)
             )
         """)
@@ -84,16 +107,16 @@ def create_tables():
         c.execute("""
             CREATE TABLE IF NOT EXISTS hospital_accounts (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                email VARCHAR(100) UNIQUE,
-                password VARCHAR(255)
+                email VARCHAR(100) UNIQUE NOT NULL,
+                password VARCHAR(512) NOT NULL
             )
         """)
 
         c.execute("""
             CREATE TABLE IF NOT EXISTS pathology_accounts (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                email VARCHAR(100) UNIQUE,
-                password VARCHAR(255)
+                email VARCHAR(100) UNIQUE NOT NULL,
+                password VARCHAR(512) NOT NULL
             )
         """)
 
@@ -101,7 +124,8 @@ def create_tables():
         conn.close()
         return "✅ Tables created successfully!"
     except Exception as e:
-        return f"❌ Error creating tables: {e}"
+        logging.error(f"Error creating tables: {e}")
+        return "❌ An error occurred creating tables. Check server logs."
 
 @app.route("/addphotocolumn")
 def add_photo_column():
@@ -113,19 +137,20 @@ def add_photo_column():
         conn.close()
         return "✅ 'photo' column added to doctors table"
     except Exception as e:
-        return f"❌ Error: {e}"
+        logging.error(f"Error adding photo column: {e}")
+        return "❌ An error occurred. Check server logs."
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
         email = request.form["email"]
-        # Hash the password before storing it for security
-        password = generate_password_hash(request.form["password"])
+        # Storing the plain text password as requested
+        password = request.form["password"]
         city = request.form["city"]
 
         conn = get_connection()
         c = conn.cursor()
-        print("🟢 Connected and inserting data")
+        logging.info(f"Processing signup for user: {email}")
         # Store the hashed password, not the plain text one
         c.execute("INSERT INTO users (email, password, city) VALUES (%s, %s, %s)", (email, password, city))
         conn.commit()
@@ -148,8 +173,9 @@ def login():
         user = c.fetchone()
         conn.close()
 
-        # Check if user exists and if the provided password matches the stored hash
-        if user and check_password_hash(user['password'], password):
+        # Check if a user was found and if the plain text password matches
+        if user and user['password'] == password:
+            # Set the session to log the user in
             session["email"] = user['email']
             return redirect("/dashboard")
         else:
@@ -188,8 +214,8 @@ def dashboard():
         pathology_labs = c.fetchall()
 
     except Exception as e:
-        flash(f"Error loading dashboard data: {e}", "danger")
-        print(f"Dashboard Error: {e}") # Log error for debugging
+        flash("Error loading dashboard data. Please try again later.", "danger")
+        logging.error(f"Dashboard loading error: {e}")
     finally:
         if conn and conn.is_connected():
             conn.close()
@@ -283,7 +309,8 @@ def doctor_search():
         
         results = c.fetchall()
     except Exception as e:
-        flash(f"An error occurred while searching: {e}", "danger")
+        flash("An error occurred while searching. Please try again.", "danger")
+        logging.error(f"Doctor search error: {e}")
     finally:
         if conn and conn.is_connected():
             conn.close()
@@ -315,13 +342,44 @@ def doctor_detail(doctor_id):
 def hospital_page():
     if "email" not in session:
         return redirect("/login")
-    conn = get_connection()
-    c = conn.cursor(dictionary=True) # Use a dictionary cursor for easier access
-    # Always fetch all hospitals, removing the search functionality
-    c.execute("SELECT name, city, hospital_type, photo_url FROM hospitals")
-    results = c.fetchall()
-    conn.close()
-    return render_template("hospital.html", results=results)
+
+    city = request.args.get("city", "").strip()
+    name = request.args.get("name", "").strip()
+    hospital_type = request.args.get("hospital_type", "").strip()
+
+    # Validation: If other fields are filled but city is not, show an error.
+    if not city and (name or hospital_type):
+        flash("first choose your city.", "warning")
+        return render_template("hospital.html", results=[], search_terms={'city': city, 'name': name, 'hospital_type': hospital_type})
+
+    results = []
+    conn = None
+    try:
+        conn = get_connection()
+        c = conn.cursor(dictionary=True)
+
+        # If a city is provided, perform a filtered search.
+        if city:
+            query = "SELECT id, name, city, hospital_type, photo_url FROM hospitals WHERE city LIKE %s"
+            params = ['%' + city + '%']
+            if name:
+                query += " AND name LIKE %s"
+                params.append('%' + name + '%')
+
+            c.execute(query, tuple(params))
+        # Otherwise, if no filters are provided, show all hospitals.
+        else:
+            c.execute("SELECT id, name, city, hospital_type, photo_url FROM hospitals")
+
+        results = c.fetchall()
+    except Exception as e:
+        flash("An error occurred while searching. Please try again.", "danger")
+        logging.error(f"Hospital search error: {e}")
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+
+    return render_template("hospital.html", results=results, search_terms={'city': city, 'name': name, 'hospital_type': hospital_type})
 
 @app.route("/hospital_detail/<int:hospital_id>")
 def hospital_detail(hospital_id):
@@ -362,13 +420,41 @@ def pathology_detail(lab_id):
 def pathology_page():
     if "email" not in session:
         return redirect("/login")
-    conn = get_connection()
-    c = conn.cursor(dictionary=True)
-    # Always fetch all pathology labs, removing the search functionality
-    c.execute("SELECT name, city, lab_type, photo_url FROM pathology_labs")
-    results = c.fetchall()
-    conn.close()
-    return render_template("pathology.html", results=results)
+
+    city = request.args.get("city", "").strip()
+    name = request.args.get("name", "").strip()
+
+    # If name is provided without a city, flash a warning message.
+    if not city and name:
+        flash("first choose your city.", "warning")
+        return render_template("pathology.html", results=[], search_terms={'city': city, 'name': name})
+
+    results = []
+    conn = None
+    try:
+        conn = get_connection()
+        c = conn.cursor(dictionary=True)
+
+        # Build and execute the query based on provided filters.
+        if city:
+            query = "SELECT id, name, city, lab_type, photo_url FROM pathology_labs WHERE city LIKE %s"
+            params = ['%' + city + '%']
+            if name:
+                query += " AND name LIKE %s"
+                params.append('%' + name + '%')
+            c.execute(query, tuple(params))
+        else:  # If no filters (or just the city is empty), show all labs.
+            c.execute("SELECT id, name, city, lab_type, photo_url FROM pathology_labs")
+        
+        results = c.fetchall()
+    except Exception as e:
+        flash("An error occurred while searching. Please try again.", "danger")
+        logging.error(f"Pathology lab search error: {e}")
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+
+    return render_template("pathology.html", results=results, search_terms={'city': city, 'name': name})
 
 @app.route("/submit", methods=["GET", "POST"])
 def submit_doctor():
@@ -385,8 +471,9 @@ def submit_doctor():
         c.execute("INSERT INTO doctors (name, age, gender, specialty, city, photo) VALUES (%s, %s, %s, %s, %s, %s)",
                   (name, age, gender, specialty, city, photo))
         conn.commit()
+        flash("Doctor submitted successfully!", "success")
         conn.close()
-        return "Doctor added successfully!"
+        return redirect("/dashboard") # Redirect to a relevant page
     return render_template("submit.html")
 
 #app.route("/viewusers")
@@ -404,3 +491,15 @@ def db_check():
 # For Render.com hosting
 port = int(os.environ.get("PORT", 5000))
 app.run(host='0.0.0.0', port=port)
+
+from flask import jsonify
+
+@app.route('/set_city', methods=['POST'])
+def set_city():
+    try:
+        data = request.get_json()  # Get JSON data from request
+        session['city'] = data.get('city')  # Store city in session
+        return jsonify({'success': True})
+    except Exception as e:
+        logging.error(f"Error setting city: {e}")
+        return jsonify({'success': False, 'error': str(e)})
