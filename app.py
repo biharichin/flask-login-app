@@ -357,9 +357,10 @@ def hospital_page():
 
     results = []
     conn = None
-    try:
+    try:  
         conn = get_connection()
         c = conn.cursor(dictionary=True)
+        print("✅ Connected to DB. Running hospital search...")
 
         # If a city is provided, perform a filtered search.
         if city:
@@ -368,15 +369,22 @@ def hospital_page():
             if name:
                 query += " AND name LIKE %s"
                 params.append('%' + name + '%')
+            if hospital_type:
+                query += " AND hospital_type LIKE %s"  # Use hospital_type here
+                params.append('%' + hospital_type + '%')
 
             c.execute(query, tuple(params))
         # Otherwise, if no filters are provided, show all hospitals.
         else:
-            c.execute("SELECT id, name, city, hospital_type, photo_url FROM hospitals")
+            c.execute("SELECT id, name, city, hospital_type, photo_url FROM hospitals")  # Match the correct column
 
         results = c.fetchall()
-    except Exception as e:
-        flash("An error occurred while searching. Please try again.", "danger")
+    except mysql.connector.Error as e:   # Catch database-specific exceptions
+        flash(f"Database error: {e}", "danger")   # More informative error
+        logging.error(f"Hospital search error: {e}") 
+        print("❌ ERROR in /hospital:", e) 
+    except Exception as e:   # For other potential errors
+        flash(f"An unexpected error occurred: {e}", "danger")
         logging.error(f"Hospital search error: {e}")
     finally:
         if conn and conn.is_connected():
@@ -400,6 +408,7 @@ def hospital_detail(hospital_id):
         if conn and conn.is_connected():
             conn.close()
     return render_template("hospital_detail.html", hospital=hospital)
+
 
 @app.route("/pathology_detail/<int:lab_id>")
 def pathology_detail(lab_id):

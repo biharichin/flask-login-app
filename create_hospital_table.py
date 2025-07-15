@@ -10,7 +10,7 @@ c.execute("""
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         city TEXT,
-        type TEXT
+        hospital_type TEXT
     )
 """)
 
