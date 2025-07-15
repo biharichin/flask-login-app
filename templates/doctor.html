@@ -21,39 +21,72 @@
 </nav>
 
 <div class="container mt-4">
-    <!-- 🔍 Search Box -->
-    <!--form method="get" action="/doctor">
-        <input type="text" name="query" placeholder="Search by name or specialty" class="form-control" style="max-width: 400px;">
-        <button type="submit" class="btn btn-primary mt-2">Search</button>
-    </form -->
+    <div class="card p-4 shadow-sm">
+        <h4 class="mb-3">🔍 Find a Doctor</h4>
+        <form method="GET" action="/doctor">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="city" class="form-label">City</label>
+                    <input type="text" name="city" id="city" class="form-control" placeholder="e.g., Delhi" value="{{ search_terms.city or '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="name" class="form-label">Doctor's Name</label>
+                    <input type="text" name="name" id="name" class="form-control" placeholder="e.g., Dr. Anjali" value="{{ search_terms.name or '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="specialty" class="form-label">Specialty</label>
+                    <input type="text" name="specialty" id="specialty" class="form-control" placeholder="e.g., Cardiology" value="{{ search_terms.specialty or '' }}">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3 w-100">Search</button>
+        </form>
+    </div>
 </div>
 
 <div class="container mt-4">
-    {% if results %}
-        <div class="row">
-            {% for doctor in results %}
-                <div class="col-md-4 mb-3">
-                    <div class="card h-100">
-                        {% if doctor[5] %}
-                            <img src="{{ url_for('static', filename='photos/' + doctor[5]) }}" class="card-img-top" alt="Doctor Photo" style="height: 250px; object-fit: cover;">
-                        {% endif %}
-                        <div class="card-body">
-                            <h5 class="card-title">{{ doctor[0] }}</h5>
-                            <p class="card-text">
-                                <strong>Age:</strong> {{ doctor[1] }}<br>
-                                <strong>Gender:</strong> {{ doctor[2] }}<br>
-                                <strong>Specialty:</strong> {{ doctor[3] }}<br>
-                                <strong>City:</strong> {{ doctor[4] }}
-                            </p>
-                        </div>
-                    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {# Display flashed messages if they exist #}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endfor %}
-        </div>
-    {% else %}
-        <p>No doctor found.</p>
-    {% endif %}
+        {% endif %}
+
+        {# Display results or informational messages #}
+        {% if results %}
+            <div class="row">
+                {% for doctor in results %}
+                    <div class="col-md-4 mb-4">
+                        <a href="/doctor_detail/{{ doctor.id }}" style="text-decoration: none; color: inherit;">
+                            <div class="card h-100 shadow-sm" style="cursor: pointer;">
+                                {% if doctor.photo %}
+                                    <img src="{{ url_for('static', filename='photos/' + doctor.photo) }}" class="card-img-top" alt="Photo of {{ doctor.name }}" style="height: 250px; object-fit: cover;">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/400x250.png?text=No+Image" class="card-img-top" alt="No image available" style="height: 250px; object-fit: cover;">
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ doctor.name }}</h5>
+                                    <p class="card-text">
+                                        <strong>Specialty:</strong> <span class="text-primary">{{ doctor.specialty }}</span><br>
+                                        <strong>City:</strong> {{ doctor.city }}
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% elif (request.args.get('city') or request.args.get('name') or request.args.get('specialty')) and not messages %}
+            <div class="alert alert-warning" role="alert">No doctors found matching your criteria. Try broadening your search.</div>
+        {% elif not (request.args.get('city') or request.args.get('name') or request.args.get('specialty')) and not results %}
+             <div class="alert alert-info" role="alert">No doctors are available at the moment.</div>
+        {% endif %}
+    {% endwith %}
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

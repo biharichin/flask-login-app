@@ -242,21 +242,54 @@ def admin():
 def doctor_search():
     if "email" not in session:
         return redirect("/login")
+ 
+    # Get filter values from the request URL, stripping any extra whitespace
+    city = request.args.get("city", "").strip()
+    name = request.args.get("name", "").strip()
+    specialty = request.args.get("specialty", "").strip()
 
-    city = request.args.get("city", "")
-    disease = request.args.get("disease", "")
-    conn = get_connection()
-    c = conn.cursor()
-    if city and disease:
-        c.execute(
-            "SELECT name, age, gender, specialty, city, photo FROM doctors WHERE city LIKE %s AND specialty LIKE %s",
-            ('%' + city + '%', '%' + disease + '%')
-        )
-    else:
-        c.execute("SELECT name, age, gender, specialty, city, photo FROM doctors")
-    results = c.fetchall()
-    conn.close()
-    return render_template("doctor.html", results=results)
+    # Validation: If other fields are filled but city is not, show an error.
+    if not city and (name or specialty):
+        flash("first choose your city.", "warning")
+        # Render the page with an empty result set, but keep the search terms in the form
+        return render_template("doctor.html", results=[], search_terms={'city': city, 'name': name, 'specialty': specialty})
+
+    results = []
+    conn = None
+    try:
+        conn = get_connection()
+        # Use a dictionary cursor for easier and more readable access in the template
+        c = conn.cursor(dictionary=True)
+
+        # If a city is provided, perform a filtered search.
+        if city:
+            # Start with a base query and a list for parameters
+            query = "SELECT id, name, specialty, city, photo FROM doctors WHERE city LIKE %s"
+            params = ['%' + city + '%']
+
+            # Dynamically add conditions for optional filters
+            if name:
+                query += " AND name LIKE %s"
+                params.append('%' + name + '%')
+
+            if specialty:
+                query += " AND specialty LIKE %s"
+                params.append('%' + specialty + '%')
+
+            c.execute(query, tuple(params))
+        # Otherwise, if no filters are provided, show all doctors.
+        else:
+            c.execute("SELECT id, name, specialty, city, photo FROM doctors")
+        
+        results = c.fetchall()
+    except Exception as e:
+        flash(f"An error occurred while searching: {e}", "danger")
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+
+    # Pass search terms back to the template to keep the form fields populated
+    return render_template("doctor.html", results=results, search_terms={'city': city, 'name': name, 'specialty': specialty})
 
 @app.route("/doctor_detail/<int:doctor_id>")
 def doctor_detail(doctor_id):
