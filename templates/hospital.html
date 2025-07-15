@@ -28,14 +28,6 @@
     </nav>
 
     <div class="container mt-4">
-        <h1 class="mb-4 text-center">Find a Hospital</h1>
-        <form method="GET" action="/hospital" class="mb-5">
-            <div class="input-group">
-                <input type="text" name="query" class="form-control" placeholder="Search hospital by name or city" value="{{ request.args.get('query', '') }}">
-                <button class="btn btn-primary" type="submit">Search</button>
-            </div>
-        </form>
-
         {% if results %}
             <div class="row">
                 {% for hospital in results %}

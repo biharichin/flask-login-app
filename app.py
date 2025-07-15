@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, flash
 import mysql.connector
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
 app = Flask(__name__)
@@ -42,8 +43,8 @@ def create_tables():
 
         c.execute("""
             CREATE TABLE IF NOT EXISTS users (
-                email VARCHAR(100),
-                password VARCHAR(100),
+                email VARCHAR(100) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
                 city VARCHAR(50)
             )
         """)
@@ -118,16 +119,19 @@ def add_photo_column():
 def signup():
     if request.method == "POST":
         email = request.form["email"]
-        password = request.form["password"]
+        # Hash the password before storing it for security
+        password = generate_password_hash(request.form["password"])
         city = request.form["city"]
 
         conn = get_connection()
         c = conn.cursor()
         print("🟢 Connected and inserting data")
+        # Store the hashed password, not the plain text one
         c.execute("INSERT INTO users (email, password, city) VALUES (%s, %s, %s)", (email, password, city))
         conn.commit()
         conn.close()
-        return "Signup successful! Go to /login"
+        flash("Signup successful! Please log in.", "success")
+        return redirect("/login")
     return render_template("signup.html")
 
 
@@ -138,16 +142,19 @@ def login():
         password = request.form["password"]
 
         conn = get_connection()
-        c = conn.cursor()
-        c.execute("SELECT * FROM users WHERE email = %s AND password = %s", (email, password))
+        # Use a dictionary cursor to access columns by name (e.g., user['password'])
+        c = conn.cursor(dictionary=True)
+        c.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = c.fetchone()
         conn.close()
 
-        if user:
-            session["email"] = email
+        # Check if user exists and if the provided password matches the stored hash
+        if user and check_password_hash(user['password'], password):
+            session["email"] = user['email']
             return redirect("/dashboard")
         else:
-            return "Invalid credentials. Try again."
+            flash("Invalid credentials. Please try again.", "danger")
+            return redirect("/login")
     return render_template("login.html")
 
 @app.route("/logout")
@@ -275,14 +282,10 @@ def doctor_detail(doctor_id):
 def hospital_page():
     if "email" not in session:
         return redirect("/login")
-    query = request.args.get("query", "")
     conn = get_connection()
     c = conn.cursor(dictionary=True) # Use a dictionary cursor for easier access
-    if query:
-        c.execute("SELECT name, city, hospital_type, photo_url FROM hospitals WHERE name LIKE %s OR city LIKE %s", 
-                  ('%' + query + '%', '%' + query + '%'))
-    else:
-        c.execute("SELECT name, city, hospital_type, photo_url FROM hospitals")
+    # Always fetch all hospitals, removing the search functionality
+    c.execute("SELECT name, city, hospital_type, photo_url FROM hospitals")
     results = c.fetchall()
     conn.close()
     return render_template("hospital.html", results=results)
@@ -326,14 +329,10 @@ def pathology_detail(lab_id):
 def pathology_page():
     if "email" not in session:
         return redirect("/login")
-    query = request.args.get("query", "")
     conn = get_connection()
     c = conn.cursor(dictionary=True)
-    if query:
-        c.execute("SELECT name, city, lab_type, photo_url FROM pathology_labs WHERE name LIKE %s OR city LIKE %s", 
-                  ('%' + query + '%', '%' + query + '%'))
-    else:
-        c.execute("SELECT name, city, lab_type, photo_url FROM pathology_labs")
+    # Always fetch all pathology labs, removing the search functionality
+    c.execute("SELECT name, city, lab_type, photo_url FROM pathology_labs")
     results = c.fetchall()
     conn.close()
     return render_template("pathology.html", results=results)
@@ -357,17 +356,6 @@ def submit_doctor():
         return "Doctor added successfully!"
     return render_template("submit.html")
 
-@app.route("/fixcity")
-def fix_city_column():
-    try:
-        conn = get_connection()
-        c = conn.cursor()
-        c.execute("ALTER TABLE users ADD COLUMN city VARCHAR(50)")
-        conn.commit()
-        conn.close()
-        return "✅ City column added"
-    except Exception as e:
-        return f"❌ Error: {e}"
 #app.route("/viewusers")
 @app.route("/dbcheck")
 def db_check():

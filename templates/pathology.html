@@ -25,14 +25,6 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="mb-4 text-center">Find a Pathology Lab</h1>
-        <form method="GET" action="/pathology" class="mb-5">
-            <div class="input-group">
-                <input type="text" name="query" class="form-control" placeholder="Search lab by name or city" value="{{ request.args.get('query', '') }}">
-                <button class="btn btn-primary" type="submit">Search</button>
-            </div>
-        </form>
-
         <div class="row">
             {% for lab in results %}
             <div class="col-md-4">
