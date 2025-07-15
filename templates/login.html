@@ -11,6 +11,16 @@
         </div>
     </nav>
     <div class="container mt-5">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mx-auto" style="max-width: 400px;">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <div class="card mx-auto" style="max-width: 400px;">
             <div class="card-body">
                 <h3 class="card-title text-center mb-4">Login</h3>

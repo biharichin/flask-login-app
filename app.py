@@ -190,7 +190,7 @@ def logout():
 
 @app.route("/dashboard")
 def dashboard():
-    # Check if user is logged in to provide a personalized experience
+    # Check if user is logged in
     email = session.get("email")  # Use .get() to safely access the email
     doctors = []
     hospitals = []
@@ -203,14 +203,17 @@ def dashboard():
 
         # Get 5 doctors for the dashboard
         c.execute("SELECT id, name, specialty, city, photo FROM doctors LIMIT 5")
+        
         doctors = c.fetchall()
 
         # Get 5 hospitals for the dashboard
         c.execute("SELECT id, name, city, photo_url FROM hospitals LIMIT 5")
+        
         hospitals = c.fetchall()
 
         # Get 5 pathology labs for the dashboard
         c.execute("SELECT id, name, city, photo_url FROM pathology_labs LIMIT 5")
+
         pathology_labs = c.fetchall()
 
     except Exception as e:
@@ -220,7 +223,7 @@ def dashboard():
         if conn and conn.is_connected():
             conn.close()
 
-    return render_template("dashboard.html", email=email, doctors=doctors, hospitals=hospitals, pathology_labs=pathology_labs)
+    return render_template("dashboard.html", email=email, doctors=doctors, hospitals=hospitals, pathology_labs=pathology_labs, city_set=session.get("city") != None)
 
 @app.route("/admin")
 def admin():
@@ -492,14 +495,15 @@ def db_check():
 port = int(os.environ.get("PORT", 5000))
 app.run(host='0.0.0.0', port=port)
 
-from flask import jsonify
 
-@app.route('/set_city', methods=['POST'])
-def set_city():
-    try:
-        data = request.get_json()  # Get JSON data from request
-        session['city'] = data.get('city')  # Store city in session
-        return jsonify({'success': True})
-    except Exception as e:
-        logging.error(f"Error setting city: {e}")
-        return jsonify({'success': False, 'error': str(e)})
+@app.route("/search", methods=["GET"])
+def search():
+    query = request.args.get("query", "").strip()
+    doctor_results = []
+    hospital_results = []
+    pathology_results = []
+
+    return render_template(
+        "search.html",
+        doctor_results=doctor_results, hospital_results=hospital_results, pathology_results=pathology_results
+    )
