@@ -223,7 +223,7 @@ def dashboard():
         if conn and conn.is_connected():
             conn.close()
 
-    return render_template("dashboard.html", email=email, doctors=doctors, hospitals=hospitals, pathology_labs=pathology_labs, city_set=session.get("city") != None)
+    return render_template("dashboard.html", email=email, doctors=doctors, hospitals=hospitals, pathology_labs=pathology_labs)
 
 @app.route("/admin")
 def admin():
