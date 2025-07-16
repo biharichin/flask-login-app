@@ -346,51 +346,42 @@ def hospital_page():
     if "email" not in session:
         return redirect("/login")
 
-    city = request.args.get("city", "").strip()
-    name = request.args.get("name", "").strip()
-    hospital_type = request.args.get("hospital_type", "").strip()
+    city = request.args.get("city", "").strip() 
+    name = request.args.get("name", "").strip() 
 
-    # Validation: If other fields are filled but city is not, show an error.
-    if not city and (name or hospital_type):
-        flash("first choose your city.", "warning")
-        return render_template("hospital.html", results=[], search_terms={'city': city, 'name': name, 'hospital_type': hospital_type})
+    # If name is provided without a city, flash a warning message.
+    if not city and name:
+        flash("first choose your city.", "warning") 
+        return render_template("hospital.html", results=[], search_terms={'city': city, 'name': name})
 
     results = []
     conn = None
-    try:  
+    try:
         conn = get_connection()
         c = conn.cursor(dictionary=True)
-        print("✅ Connected to DB. Running hospital search...")
 
-        # If a city is provided, perform a filtered search.
+        # Build and execute the query based on provided filters.
         if city:
             query = "SELECT id, name, city, hospital_type, photo_url FROM hospitals WHERE city LIKE %s"
             params = ['%' + city + '%']
             if name:
                 query += " AND name LIKE %s"
                 params.append('%' + name + '%')
-            if hospital_type:
-                query += " AND hospital_type LIKE %s"  # Use hospital_type here
-                params.append('%' + hospital_type + '%')
-
             c.execute(query, tuple(params))
-        # Otherwise, if no filters are provided, show all hospitals.
-        else:
-            c.execute("SELECT id, name, city, hospital_type, photo_url FROM hospitals")  # Match the correct column
+        else:  # If no filters (or just the city is empty), show all hospitals.
+            c.execute("SELECT id, name, city, hospital_type, photo_url FROM hospitals")
 
         results = c.fetchall()
-    except mysql.connector.Error as e:   # Catch database-specific exceptions
-        flash(f"Database error: {e}", "danger")   # More informative error
-        logging.error(f"Hospital search error: {e}") 
-        print("❌ ERROR in /hospital:", e) 
-    except Exception as e:   # For other potential errors
-        flash(f"An unexpected error occurred: {e}", "danger")
+    except Exception as e:
+        flash("An error occurred while searching. Please try again.", "danger")
         logging.error(f"Hospital search error: {e}")
     finally:
         if conn and conn.is_connected():
             conn.close()
 
-    return render_template("hospital.html", results=results, search_terms={'city': city, 'name': name, 'hospital_type': hospital_type})
+    return render_template("hospital.html", results=results, search_terms={'city': city, 'name': name})
+
+
 
 @app.route("/hospital_detail/<int:hospital_id>")
 def hospital_detail(hospital_id):

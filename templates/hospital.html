@@ -1,111 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Hospitals</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0; padding: 0;
-      background: #f4f4f4;
-    }
-    .container {
-      padding: 20px;
-    }
-    .search-form {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .search-form input {
-      padding: 8px;
-      font-size: 16px;
-      flex: 1;
-      min-width: 150px;
-    }
-    .search-form button {
-      padding: 8px 20px;
-      font-size: 16px;
-      background: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    .card-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-    }
-    .card {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      padding: 15px;
-      width: calc(33.33% - 20px);
-      box-sizing: border-box;
-      text-align: center;
-    }
-    .card img {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      border-radius: 10px;
-    }
-    .card h3 {
-      margin: 10px 0 5px;
-    }
-    .card p {
-      margin: 2px 0;
-      color: #666;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-      .card {
-        width: calc(50% - 20px);
-      }
-    }
-    @media (max-width: 480px) {
-      .card {
-        width: 100%;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Hospitals</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .lab-card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .lab-card:hover {
+            transform: translateY(-5px);
+        }
+        .lab-card img {
+            height: 200px;
+            object-fit: cover;
+        }
+    </style>
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand">All Hospitals</span>
+        </div>
+    </nav>
 
-  {% include 'navbar.html' %}
+    <div class="container mt-5">
+        <div class="card p-4 shadow-sm">
+            <h4 class="mb-3">🏥 Find a Hospital</h4>
+            <form method="GET" action="/hospital">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="city" class="form-label">City</label>
+                        <input type="text" name="city" id="city" class="form-control" placeholder="e.g., Delhi" value="{{ search_terms.get('city', '') }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">Hospital Name</label>
+                        <input type="text" name="name" id="name" class="form-control" placeholder="e.g., AIIMS" value="{{ search_terms.name or '' }}">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3 w-100">Search</button>
+            </form>
+        </div>
 
-  <div class="container">
-    <h2>Find Hospitals</h2>
-    <form class="search-form" method="get">
-      <input type="text" name="city" placeholder="City" value="{{ search_terms.city }}">
-      <input type="text" name="name" placeholder="Hospital Name" value="{{ search_terms.name }}">
-      <input type="text" name="hospital_type" placeholder="Hospital Type" value="{{ search_terms.hospital_type }}">
-      <button type="submit">Search</button>
-    </form>
+        <div class="container mt-4">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {# Display flashed messages if they exist #}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
 
-    {% if results %}
-      <div class="card-grid">
-        {% for hospital in results %}
-          <div class="card">
-            {% if hospital.photo_url %}
-              <img src="{{ url_for('static', filename='uploads/' ~ hospital.photo_url) }}" alt="Hospital Photo">
-            {% else %}
-              <img src="{{ url_for('static', filename='default-hospital.jpg') }}" alt="Default Photo">
-            {% endif %}
-            <h3>{{ hospital.name }}</h3>
-            <p>{{ hospital.city }}</p>
-            <p>{{ hospital.hospital_type }}</p>
-          </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p>No hospitals found. Try searching with different details.</p>
-    {% endif %}
-  </div>
-
+            {% if results %}
+            <h3 class="mt-4">Search Results</h3>
+            <div class="row">
+                {% for hospital in results %}
+                    <div class="col-md-4 mb-4">
+                        <a href="/hospital_detail/{{ hospital.id }}" style="text-decoration: none; color: inherit;">
+                            <div class="card h-100 shadow-sm" style="cursor: pointer;">
+                                {% if hospital.photo_url %}
+                                    <img src="{{ url_for('static', filename='uploads/' + hospital.photo_url) }}" class="card-img-top" alt="Photo of {{ hospital.name }}" style="height: 250px; object-fit: cover;">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/400x250.png?text=No+Image" class="card-img-top" alt="No image available" style="height: 250px; object-fit: cover;">
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ hospital.name }}</h5>
+                                    <p class="card-text">
+                                        <strong>City:</strong> {{ hospital.city }}<br>
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% elif (search_terms.get('city') or search_terms.get('name')) and not messages %}
+            <div class="alert alert-warning" role="alert">No hospitals found matching your criteria. Try broadening your search.</div>
+        {% elif not (search_terms.get('city') or search_terms.get('name')) and not results %}
+            <div class="alert alert-info" role="alert">No hospitals are available at the moment.</div>
+        {% endif %}
+        </div>
+    </div>
 </body>
 </html>

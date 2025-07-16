@@ -33,58 +33,31 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label for="city" class="form-label">City</label>
-                        <input type="text" name="city" id="city" class="form-control" placeholder="e.g., Delhi" value="{{ search_terms.city or '' }}">
+                        <input type="text" name="city" id="city" class="form-control" placeholder="e.g., Delhi" value="{{ search_terms.get('city', '') }}">
                     </div>
                     <div class="col-md-6">
                         <label for="name" class="form-label">Lab Name</label>
-                        <input type="text" name="name" id="name" class="form-control" placeholder="e.g., Metropolis" value="{{ search_terms.name or '' }}">
+                        <input type="text" name="name" id="name" class="form-control" placeholder="e.g., Metropolis" value="{{ search_terms.get('name', '') }}">
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary mt-3 w-100">Search</button>
             </form>
         </div>
 
-        <div class="container mt-4">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {# Display flashed messages if they exist #}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-
-                {# Display results or informational messages #}
-                {% if results %}
-                    <div class="row">
-                        {% for lab in results %}
-                            <div class="col-md-4 mb-4">
-                                <a href="/pathology_detail/{{ lab.id }}" style="text-decoration: none; color: inherit;">
-                                    <div class="card h-100 shadow-sm" style="cursor: pointer;">
-                                        {% if lab.photo_url %}
-                                            <img src="{{ url_for('static', filename='uploads/' + lab.photo_url) }}" class="card-img-top" alt="Photo of {{ lab.name }}" style="height: 250px; object-fit: cover;">
-                                        {% else %}
-                                            <img src="https://via.placeholder.com/400x250.png?text=No+Image" class="card-img-top" alt="No image available" style="height: 250px; object-fit: cover;">
-                                        {% endif %}
-                                        <div class="card-body">
-                                            <h5 class="card-title">{{ lab.name }}</h5>
-                                            <p class="card-text">
-                                                <strong>City:</strong> {{ lab.city }}<br>
-                                            </p>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% elif (request.args.get('city') or request.args.get('name')) and not messages %}
-                    <div class="alert alert-warning" role="alert">No labs found matching your criteria. Try broadening your search.</div>
-                {% elif not (request.args.get('city') or request.args.get('name')) and not results %}
-                    <div class="alert alert-info" role="alert">No labs are available at the moment.</div>
-                {% endif %}
-            {% endwith %}
+        {% if results %}
+        <h3 class="mt-4">Search Results</h3>
+        <ul class="list-group">
+            {% for lab in results %}
+                <li class="list-group-item">
+                    <a href="/pathology_detail/{{ lab.id }}" class="text-decoration-none text-dark d-block">{{ lab.name }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+        {% elif (search_terms.get('city') or search_terms.get('name')) %}
+            <div class="alert alert-warning mt-4" role="alert">No pathology labs found matching your criteria.</div>
+        {% else %}
+            <p class="text-muted mt-4">Enter search criteria to find pathology labs.</p>
+        {% endif %}
     </div>
 </body>
 </html>
