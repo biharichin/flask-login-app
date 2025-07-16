@@ -369,7 +369,7 @@ def hospital_page():
                 params.append('%' + name + '%')
             c.execute(query, tuple(params))
         else:  # If no filters (or just the city is empty), show all hospitals.
-            c.execute("SELECT id, name, city, hospital_type, photo_url FROM hospitals")
+            c.execute("SELECT id, name, city, hospital_type, photo_url,department_name FROM hospitals")
 
         results = c.fetchall()
     except Exception as e:
@@ -393,7 +393,7 @@ def hospital_detail(hospital_id):
     try:
         conn = get_connection()
         c = conn.cursor(dictionary=True)
-        c.execute("SELECT name, city, hospital_type, photo_url FROM hospitals WHERE id = %s", (hospital_id,))
+        c.execute("SELECT name, city, hospital_type, photo_url, department_name FROM hospitals WHERE id = %s", (hospital_id,))
         hospital = c.fetchone()
     finally:
         if conn and conn.is_connected():
