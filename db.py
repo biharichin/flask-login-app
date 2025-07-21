@@ -9,9 +9,11 @@ def get_db():
     """
     if 'db' not in g:
         try:
+            db_user = os.environ.get("DB_USER")
+            print(f"DEBUG: DB_USER from environment: {db_user}") # Added for debugging Render issue
             g.db = mysql.connector.connect(
                 host=os.environ.get("DB_HOST"),
-                user=os.environ.get("DB_USER"),
+                user=db_user,
                 password=os.environ.get("DB_PASSWORD"),
                 database=os.environ.get("DB_NAME"),
                 port=3306
