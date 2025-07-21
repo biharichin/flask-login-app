@@ -4,54 +4,24 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import logging
 from dotenv import load_dotenv
-import secrets
-secrets.token_hex(16)
+from db import get_db, close_db # Import the new db functions
 # Ensure the .env file is loaded to access environment variables
 # This is necessary to keep sensitive information like database credentials secure.
 
 # Load environment variables from .env file
 load_dotenv()
 
-# --- TEMPORARY DEBUGGING ---
-# This block will help you check if your .env file is being loaded correctly.
-# You can remove this code once you confirm everything is working.
-print("--- Checking Environment Variables ---")
-print(f"SECRET_KEY loaded: {'Yes' if os.environ.get('SECRET_KEY') else 'No, not found!'}")
-print(f"DB_HOST loaded: {os.environ.get('DB_HOST')}")
-print(f"ADMIN_EMAIL loaded: {os.environ.get('ADMIN_EMAIL')}")
-print("------------------------------------")
-
 # Configure basic logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+import sys
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', stream=sys.stdout)
 
 app = Flask(__name__)
 # Load configuration from environment variables
 app.secret_key = os.environ.get("SECRET_KEY")
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
 
-@app.route("/addcitycolumn")
-def add_city_column():
-    try:
-        conn = get_connection()
-        c = conn.cursor()
-        c.execute("ALTER TABLE users ADD COLUMN city VARCHAR(50)")
-        conn.commit()
-        conn.close()
-        return "✅ 'city' column added to users table"
-    except Exception as e:
-        logging.error(f"Error adding city column: {e}")
-        return "❌ An error occurred. Check server logs."
-
-
-# MySQL connection
-def get_connection():
-    return mysql.connector.connect(
-        host=os.environ.get("DB_HOST"),
-        user=os.environ.get("DB_USER"),
-        password=os.environ.get("DB_PASSWORD"),
-        database=os.environ.get("DB_NAME"),
-        port=3306
-    )
+# Register the close_db function to be called when the app context ends
+app.teardown_appcontext(close_db)
 
 @app.route("/")
 def home():
@@ -61,17 +31,20 @@ def home():
 @app.route("/createtables")
 def create_tables():
     try:
-        conn = get_connection()
+        conn = get_db()
         c = conn.cursor()
 
+        logging.info("Attempting to create 'users' table...")
         c.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 email VARCHAR(100) UNIQUE NOT NULL,
-                password VARCHAR(100) NOT NULL,
+                password VARCHAR(512) NOT NULL,
                 city VARCHAR(50)
             )
         """)
+        logging.info("'users' table creation statement executed.")
 
+        logging.info("Attempting to create 'doctors' table...")
         c.execute("""
             CREATE TABLE IF NOT EXISTS doctors (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -79,20 +52,26 @@ def create_tables():
                 age INT,
                 gender VARCHAR(10),
                 specialty VARCHAR(100),
-                city VARCHAR(100)
+                city VARCHAR(100),
+                photo VARCHAR(255)
             )
         """)
+        logging.info("'doctors' table creation statement executed.")
 
+        logging.info("Attempting to create 'hospitals' table...")
         c.execute("""
             CREATE TABLE IF NOT EXISTS hospitals (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(100),
                 city VARCHAR(100),
                 hospital_type VARCHAR(100),
-                photo_url VARCHAR(255)
+                photo_url VARCHAR(255),
+                account_id INT
             )
         """)
+        logging.info("'hospitals' table creation statement executed.")
 
+        logging.info("Attempting to create 'pathology_labs' table...")
         c.execute("""
             CREATE TABLE IF NOT EXISTS pathology_labs (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -103,7 +82,9 @@ def create_tables():
                 account_id INT
             )
         """)
+        logging.info("'pathology_labs' table creation statement executed.")
 
+        logging.info("Attempting to create 'hospital_accounts' table...")
         c.execute("""
             CREATE TABLE IF NOT EXISTS hospital_accounts (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -111,7 +92,9 @@ def create_tables():
                 password VARCHAR(512) NOT NULL
             )
         """)
+        logging.info("'hospital_accounts' table creation statement executed.")
 
+        logging.info("Attempting to create 'pathology_accounts' table...")
         c.execute("""
             CREATE TABLE IF NOT EXISTS pathology_accounts (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -119,42 +102,38 @@ def create_tables():
                 password VARCHAR(512) NOT NULL
             )
         """)
+        logging.info("'pathology_accounts' table creation statement executed.")
 
         conn.commit()
-        conn.close()
+        logging.info("Database commit successful.")
+
+        # Verify if 'users' table exists
+        c.execute("SHOW TABLES LIKE 'users'")
+        if c.fetchone():
+            logging.info("'users' table verified to exist.")
+        else:
+            logging.warning("'users' table does NOT exist after creation attempt.")
+
         return "✅ Tables created successfully!"
     except Exception as e:
         logging.error(f"Error creating tables: {e}")
         return "❌ An error occurred creating tables. Check server logs."
 
-@app.route("/addphotocolumn")
-def add_photo_column():
-    try:
-        conn = get_connection()
-        c = conn.cursor()
-        c.execute("ALTER TABLE doctors ADD COLUMN photo VARCHAR(255)")
-        conn.commit()
-        conn.close()
-        return "✅ 'photo' column added to doctors table"
-    except Exception as e:
-        logging.error(f"Error adding photo column: {e}")
-        return "❌ An error occurred. Check server logs."
-
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
         email = request.form["email"]
-        # Storing the plain text password as requested
         password = request.form["password"]
         city = request.form["city"]
 
-        conn = get_connection()
+        conn = get_db()
         c = conn.cursor()
         logging.info(f"Processing signup for user: {email}")
-        # Store the hashed password, not the plain text one
-        c.execute("INSERT INTO users (email, password, city) VALUES (%s, %s, %s)", (email, password, city))
+        logging.info(f"Signup function connected to database: {conn.database}")
+        # Hash the password for security before storing it
+        hashed_password = generate_password_hash(password)
+        c.execute("INSERT INTO users (email, password, city) VALUES (%s, %s, %s)", (email, hashed_password, city))
         conn.commit()
-        conn.close()
         flash("Signup successful! Please log in.", "success")
         return redirect("/login")
     return render_template("signup.html")
@@ -166,15 +145,14 @@ def login():
         email = request.form["email"]
         password = request.form["password"]
 
-        conn = get_connection()
+        conn = get_db()
         # Use a dictionary cursor to access columns by name (e.g., user['password'])
         c = conn.cursor(dictionary=True)
         c.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = c.fetchone()
-        conn.close()
 
-        # Check if a user was found and if the plain text password matches
-        if user and user['password'] == password:
+        # Check if a user was found and if the provided password matches the stored hash
+        if user and check_password_hash(user['password'], password):
             # Set the session to log the user in
             session["email"] = user['email']
             return redirect("/dashboard")
@@ -195,14 +173,13 @@ def dashboard():
     doctors = []
     hospitals = []
     pathology_labs = []
-    conn = None
     try:
-        conn = get_connection()
+        conn = get_db()
         # Use a dictionary cursor for easier access in the template (e.g., doctor.name)
         c = conn.cursor(dictionary=True)
 
         # Get 5 doctors for the dashboard
-        c.execute("SELECT id, name, specialty, city, photo FROM doctors LIMIT 5")
+        c.execute("SELECT id, name, specialty, city, photo FROM doctors WHERE photo IS NOT NULL AND photo != '' LIMIT 5")
         
         doctors = c.fetchall()
 
@@ -219,9 +196,6 @@ def dashboard():
     except Exception as e:
         flash("Error loading dashboard data. Please try again later.", "danger")
         logging.error(f"Dashboard loading error: {e}")
-    finally:
-        if conn and conn.is_connected():
-            conn.close()
 
     return render_template("dashboard.html", email=email, doctors=doctors, hospitals=hospitals, pathology_labs=pathology_labs)
 
@@ -231,7 +205,7 @@ def admin():
     if "email" not in session or session.get("email") != ADMIN_EMAIL:
         flash("You do not have permission to access this page.", "danger")
         return redirect("/dashboard") # Redirect non-admins to the dashboard
-    conn = get_connection()
+    conn = get_db()
     c = conn.cursor(dictionary=True)
 
     # Users
@@ -264,11 +238,10 @@ def admin():
     """)
     pathology_labs = c.fetchall()
 
-    conn.close()
     return render_template("admin.html", users=users, doctors=doctors, hospitals=hospitals, pathology_labs=pathology_labs)
 
 @app.route("/doctor", methods=["GET"])
-def doctor_search():
+def doctor_page():
     if "email" not in session:
         return redirect("/login")
  
@@ -284,9 +257,8 @@ def doctor_search():
         return render_template("doctor.html", results=[], search_terms={'city': city, 'name': name, 'specialty': specialty})
 
     results = []
-    conn = None
     try:
-        conn = get_connection()
+        conn = get_db()
         # Use a dictionary cursor for easier and more readable access in the template
         c = conn.cursor(dictionary=True)
 
@@ -314,9 +286,6 @@ def doctor_search():
     except Exception as e:
         flash("An error occurred while searching. Please try again.", "danger")
         logging.error(f"Doctor search error: {e}")
-    finally:
-        if conn and conn.is_connected():
-            conn.close()
 
     # Pass search terms back to the template to keep the form fields populated
     return render_template("doctor.html", results=results, search_terms={'city': city, 'name': name, 'specialty': specialty})
@@ -327,16 +296,20 @@ def doctor_detail(doctor_id):
         return redirect("/login")
 
     doctor = None
-    conn = None
     try:
-        conn = get_connection()
+        conn = get_db()
         c = conn.cursor(dictionary=True)
         # Fetch all details for the specific doctor
         c.execute("SELECT name, age, gender, specialty, city, photo FROM doctors WHERE id = %s", (doctor_id,))
         doctor = c.fetchone()
-    finally:
-        if conn and conn.is_connected():
-            conn.close()
+    except Exception as e:
+        flash("An error occurred while fetching doctor details.", "danger")
+        logging.error(f"Doctor detail error for id {doctor_id}: {e}")
+        return redirect("/doctor") # Redirect back to the search page on error
+
+    if not doctor:
+        flash(f"Doctor with ID {doctor_id} not found.", "warning")
+        return redirect("/doctor")
 
     return render_template("doctor_detail.html", doctor=doctor)
 
@@ -355,9 +328,8 @@ def hospital_page():
         return render_template("hospital.html", results=[], search_terms={'city': city, 'name': name})
 
     results = []
-    conn = None
     try:
-        conn = get_connection()
+        conn = get_db()
         c = conn.cursor(dictionary=True)
 
         # Build and execute the query based on provided filters.
@@ -369,15 +341,12 @@ def hospital_page():
                 params.append('%' + name + '%')
             c.execute(query, tuple(params))
         else:  # If no filters (or just the city is empty), show all hospitals.
-            c.execute("SELECT id, name, city, hospital_type, photo_url,department_name FROM hospitals")
+            c.execute("SELECT id, name, city, hospital_type, photo_url FROM hospitals")
 
         results = c.fetchall()
     except Exception as e:
         flash("An error occurred while searching. Please try again.", "danger")
         logging.error(f"Hospital search error: {e}")
-    finally:
-        if conn and conn.is_connected():
-            conn.close()
 
     return render_template("hospital.html", results=results, search_terms={'city': city, 'name': name})
 
@@ -389,15 +358,19 @@ def hospital_detail(hospital_id):
         return redirect("/login")
     
     hospital = None
-    conn = None
     try:
-        conn = get_connection()
+        conn = get_db()
         c = conn.cursor(dictionary=True)
-        c.execute("SELECT name, city, hospital_type, photo_url, department_name FROM hospitals WHERE id = %s", (hospital_id,))
+        c.execute("SELECT name, city, hospital_type, photo_url FROM hospitals WHERE id = %s", (hospital_id,))
         hospital = c.fetchone()
-    finally:
-        if conn and conn.is_connected():
-            conn.close()
+    except Exception as e:
+        flash("An error occurred while fetching hospital details.", "danger")
+        logging.error(f"Hospital detail error for id {hospital_id}: {e}")
+        return redirect("/hospital")
+
+    if not hospital:
+        flash(f"Hospital with ID {hospital_id} not found.", "warning")
+        return redirect("/hospital")
     return render_template("hospital_detail.html", hospital=hospital)
 
 
@@ -407,15 +380,19 @@ def pathology_detail(lab_id):
         return redirect("/login")
 
     lab = None
-    conn = None
     try:
-        conn = get_connection()
+        conn = get_db()
         c = conn.cursor(dictionary=True)
         c.execute("SELECT name, city, lab_type, photo_url FROM pathology_labs WHERE id = %s", (lab_id,))
         lab = c.fetchone()
-    finally:
-        if conn and conn.is_connected():
-            conn.close()
+    except Exception as e:
+        flash("An error occurred while fetching pathology lab details.", "danger")
+        logging.error(f"Pathology lab detail error for id {lab_id}: {e}")
+        return redirect("/pathology")
+
+    if not lab:
+        flash(f"Pathology lab with ID {lab_id} not found.", "warning")
+        return redirect("/pathology")
 
     return render_template("pathology_detail.html", lab=lab)
 
@@ -433,9 +410,8 @@ def pathology_page():
         return render_template("pathology.html", results=[], search_terms={'city': city, 'name': name})
 
     results = []
-    conn = None
     try:
-        conn = get_connection()
+        conn = get_db()
         c = conn.cursor(dictionary=True)
 
         # Build and execute the query based on provided filters.
@@ -453,29 +429,36 @@ def pathology_page():
     except Exception as e:
         flash("An error occurred while searching. Please try again.", "danger")
         logging.error(f"Pathology lab search error: {e}")
-    finally:
-        if conn and conn.is_connected():
-            conn.close()
 
     return render_template("pathology.html", results=results, search_terms={'city': city, 'name': name})
 
 @app.route("/submit", methods=["GET", "POST"])
 def submit_doctor():
     if request.method == "POST":
-        name = request.form["name"]
-        age = request.form["age"]
-        gender = request.form["gender"]
-        specialty = request.form["specialty"]
+        name = request.form.get("name", "").strip()
+        age_str = request.form.get("age", "").strip()
+        gender = request.form.get("gender", "").strip()
+        specialty = request.form.get("specialty", "").strip()
         city = request.form.get("city", "")  # Add city field
         photo = request.form.get("photo", "")  # Add photo field
 
-        conn = get_connection()
+        # --- Basic Validation ---
+        if not all([name, age_str, gender, specialty, city]):
+            flash("All fields are required.", "danger")
+            return render_template("submit.html", form_data=request.form)
+        
+        try:
+            age = int(age_str)
+        except ValueError:
+            flash("Age must be a valid number.", "danger")
+            return render_template("submit.html", form_data=request.form)
+
+        conn = get_db()
         c = conn.cursor()
         c.execute("INSERT INTO doctors (name, age, gender, specialty, city, photo) VALUES (%s, %s, %s, %s, %s, %s)",
                   (name, age, gender, specialty, city, photo))
         conn.commit()
         flash("Doctor submitted successfully!", "success")
-        conn.close()
         return redirect("/dashboard") # Redirect to a relevant page
     return render_template("submit.html")
 
@@ -483,18 +466,13 @@ def submit_doctor():
 @app.route("/dbcheck")
 def db_check():
     try:
-        conn = get_connection()
+        conn = get_db()
         if conn.is_connected():
             return "🟢 App is using MySQL!"
         else:
             return "🔴 Not connected to MySQL."
     except Exception as e:
         return f"❌ Error: {e}"
-
-# For Render.com hosting
-port = int(os.environ.get("PORT", 5000))
-app.run(host='0.0.0.0', port=port)
-
 
 @app.route("/search", methods=["GET"])
 def search():
@@ -503,7 +481,40 @@ def search():
     hospital_results = []
     pathology_results = []
 
+    if query:  # Only perform a search if a query is provided
+        try:
+            conn = get_db()
+            c = conn.cursor(dictionary=True)
+            search_term = f"%{query}%"
+
+            # Search doctors by name or specialty
+            c.execute("SELECT id, name, specialty, city, photo FROM doctors WHERE name LIKE %s OR specialty LIKE %s", (search_term, search_term))
+            doctor_results = c.fetchall()
+
+            # Search hospitals by name or type
+            c.execute("SELECT id, name, city, hospital_type, photo_url FROM hospitals WHERE name LIKE %s OR hospital_type LIKE %s", (search_term, search_term))
+            hospital_results = c.fetchall()
+
+            # Search pathology labs by name or type
+            c.execute("SELECT id, name, city, lab_type, photo_url FROM pathology_labs WHERE name LIKE %s OR lab_type LIKE %s", (search_term, search_term))
+            pathology_results = c.fetchall()
+        except Exception as e:
+            flash("An error occurred during the search.", "danger")
+            logging.error(f"Global search error for query '{query}': {e}")
+
     return render_template(
         "search.html",
+        query=query,
         doctor_results=doctor_results, hospital_results=hospital_results, pathology_results=pathology_results
     )
+
+# The app.run() block should be the very last thing in your file.
+# This ensures that all routes are registered before the server starts.
+# The `if __name__ == '__main__':` block is standard practice and ensures
+# that the server only runs when the script is executed directly (e.g., `python app.py`),
+# not when it's imported by another module (like a WSGI server like Gunicorn).
+if __name__ == '__main__':
+    # For Render.com hosting, the port is set via an environment variable.
+    # Default to 5000 for local development.
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=True) # debug=True provides detailed error pages
