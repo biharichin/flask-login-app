@@ -2,12 +2,14 @@
 <html>
 <head>
     <title>Sign Up</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #fafafa;
-            margin: 0;
+            margin: 0 auto; /* Center the body content */
             padding: 0;
+            max-width: 500px; /* Limit overall width for better readability on large screens */
         }
         nav {
             background-color: white;
@@ -16,6 +18,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            max-width: 400px; /* Added max-width */
+            margin: 0 auto; /* Centered */
         }
         nav h1 {
             margin: 0;
@@ -23,7 +27,8 @@
             color: #333;
         }
         .container {
-            max-width: 400px;
+            width: 90%; /* Use a percentage for width */
+            max-width: 400px; /* Max width for larger screens */
             margin: 50px auto;
             background-color: white;
             padding: 30px;
